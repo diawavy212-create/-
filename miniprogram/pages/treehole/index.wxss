@@ -1,0 +1,133 @@
+.mode-row {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.mode {
+  flex: 1;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  color: #667789;
+  background: #ffffff;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+}
+
+.mode.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #c51624, #df4650);
+}
+
+.title-input {
+  width: 100%;
+  height: 82rpx;
+  box-sizing: border-box;
+  padding: 0 24rpx;
+  margin-bottom: 20rpx;
+  color: #09213a;
+  background: #ffffff;
+  border: 1rpx solid #dde1e6;
+  border-radius: 16rpx;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 220rpx;
+  box-sizing: border-box;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  color: #09213a;
+  background: #ffffff;
+  border: 1rpx solid #dde1e6;
+  border-radius: 16rpx;
+}
+
+.form-row {
+  display: flex;
+  gap: 14rpx;
+  margin-bottom: 20rpx;
+}
+
+.picker-chip {
+  flex: 1;
+  height: 58rpx;
+  line-height: 58rpx;
+  text-align: center;
+  color: #c51624;
+  background: #f9e6e8;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+}
+
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 20rpx;
+}
+
+.attachment-button {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0;
+  margin: 0;
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+}
+
+.attachment-button::after {
+  border: 0;
+}
+
+.attachment-thumb {
+  width: 86rpx;
+  height: 86rpx;
+  border-radius: 12rpx;
+}
+
+.appeal {
+  padding: 22rpx 0;
+  border-top: 1rpx solid #dde1e6;
+}
+
+.appeal:first-of-type {
+  border-top: 0;
+}
+
+.appeal-title {
+  margin-bottom: 10rpx;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.appeal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 8rpx;
+}
+
+.appeal-meta text {
+  padding: 4rpx 14rpx;
+  color: #c51624;
+  background: #f9e6e8;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.tag {
+  margin-top: 12rpx;
+}
+
+.feedback-preview {
+  margin-top: 8rpx;
+  color: #697789;
+  font-size: 24rpx;
+  line-height: 36rpx;
+}

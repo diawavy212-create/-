@@ -1,0 +1,52 @@
+.training-card {
+  padding: 24rpx 0;
+  border-top: 1rpx solid #dde1e6;
+}
+
+.training-card:first-of-type {
+  border-top: 0;
+}
+
+.title {
+  margin-bottom: 10rpx;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.small {
+  flex: 1;
+  height: 70rpx;
+  line-height: 70rpx;
+  font-size: 26rpx;
+}
+
+.cancel-button {
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+}
+
+.outline {
+  flex: 1;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  color: #c51624;
+  background: transparent;
+  border: 1rpx solid #c51624;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+}
+
+.outline::after {
+  border: 0;
+}

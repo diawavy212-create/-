@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">思政培训活动</view>
+    <block wx:for="{{items}}" wx:key="id">
+      <view class="training-card pressable">
+        <view class="title">{{item.title}}</view>
+        <view class="muted">{{item.hours}} 学时 · {{item.statusText || item.status}} · 已报名 {{item.enrolledCount || 0}} 人</view>
+        <view class="actions">
+          <button
+            class="primary-button small {{item.enrolled ? 'cancel-button' : ''}}"
+            data-id="{{item.id}}"
+            loading="{{enrollingId == item.id}}"
+            disabled="{{enrollingId && enrollingId != item.id}}"
+            bindtap="toggleEnroll"
+          >{{item.enrolled ? "取消报名" : "报名"}}</button>
+          <button class="outline" data-id="{{item.id}}" data-title="{{item.title}}" bindtap="viewLedger">查看台账</button>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

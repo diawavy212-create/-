@@ -1,0 +1,24 @@
+[Unit]
+Description=Teacher Platform API
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=teacher-platform
+Group=teacher-platform
+WorkingDirectory=/opt/teacher-platform/server
+EnvironmentFile=/etc/teacher-platform/teacher-platform.env
+ExecStart=/opt/teacher-platform/server/teacher-platform-api
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/log/teacher-platform
+StandardOutput=append:/var/log/teacher-platform/api.log
+StandardError=append:/var/log/teacher-platform/api.err.log
+
+[Install]
+WantedBy=multi-user.target

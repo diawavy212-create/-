@@ -1,0 +1,53 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">教师树洞</view>
+    <view class="mode-row">
+      <view
+        wx:for="{{anonymousOptions}}"
+        wx:key="value"
+        class="mode {{anonymousType == item.value ? 'active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="selectAnonymous"
+      >{{item.label}}</view>
+    </view>
+
+    <input class="title-input" value="{{title}}" placeholder="请输入诉求标题" bindinput="onTitleInput" />
+    <textarea class="textarea" value="{{content}}" placeholder="请填写具体诉求内容、问题描述或期望处理方式" bindinput="onInput" />
+
+    <view class="form-row">
+      <picker class="picker-chip" mode="selector" range="{{categoryOptions}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view>类目：{{categoryOptions[categoryIndex]}}</view>
+      </picker>
+      <picker class="picker-chip" mode="selector" range="{{emergencyOptions}}" range-key="label" value="{{emergencyIndex}}" bindchange="onEmergencyChange">
+        <view>紧急：{{emergencyOptions[emergencyIndex].label}}</view>
+      </picker>
+    </view>
+
+    <view class="attachment-row">
+      <button class="attachment-button" bindtap="chooseAttachment">{{attachmentUrl ? "更换附件图片" : "上传附件图片"}}</button>
+      <image wx:if="{{attachmentPreviewUrl}}" class="attachment-thumb" src="{{attachmentPreviewUrl}}" mode="aspectFill" bindtap="previewAttachment"></image>
+    </view>
+
+    <button class="primary-button" bindtap="submit">提交诉求</button>
+  </view>
+
+  <view class="card">
+    <view class="section-title">办理进度</view>
+    <block wx:if="{{items.length}}">
+      <block wx:for="{{items}}" wx:key="id">
+        <view class="appeal pressable" data-index="{{index}}" bindtap="openDetail">
+          <view class="appeal-title">{{item.displayTitle}}</view>
+          <view class="appeal-meta">
+            <text>{{item.anonymousText}}</text>
+            <text>{{item.category}}</text>
+            <text>{{item.emergencyText}}</text>
+          </view>
+          <view class="muted">状态：{{item.statusText}}</view>
+          <view wx:if="{{item.handleContent}}" class="feedback-preview">反馈：{{item.handleContent}}</view>
+          <view wx:if="{{item.attachmentPreviewUrl}}" class="muted">附件：点击查看详情后预览</view>
+        </view>
+      </block>
+    </block>
+    <view wx:else class="empty">暂无诉求记录</view>
+  </view>
+</view>

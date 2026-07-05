@@ -1,0 +1,115 @@
+.profile-page {
+  padding-bottom: 60rpx;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  margin-top: 28rpx;
+  padding: 38rpx 30rpx;
+}
+
+.avatar {
+  width: 82rpx;
+  height: 82rpx;
+  line-height: 82rpx;
+  text-align: center;
+  color: #ffffff;
+  background: #c51624;
+  border-radius: 50%;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.user-copy {
+  flex: 1;
+}
+
+.user-name {
+  margin-bottom: 8rpx;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.edit-button {
+  height: 58rpx;
+  line-height: 58rpx;
+  padding: 0 22rpx;
+  margin: 0;
+  color: #c51624;
+  background: #f9e6e8;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.edit-button::after {
+  border: 0;
+}
+
+.info-card {
+  padding: 18rpx 30rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #dde1e6;
+  color: #213247;
+  font-size: 28rpx;
+}
+
+.info-row:last-child {
+  border-bottom: 0;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #dde1e6;
+  color: #213247;
+  font-size: 28rpx;
+}
+
+.form-row:last-child {
+  border-bottom: 0;
+}
+
+.form-row input {
+  flex: 1;
+  height: 64rpx;
+  padding: 0 18rpx;
+  text-align: right;
+  background: #ffffff;
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+
+.ghost-button {
+  height: 84rpx;
+  line-height: 84rpx;
+  color: #213247;
+  background: #ffffff;
+  border-radius: 16rpx;
+  font-weight: 700;
+}
+
+.ghost-button::after {
+  border: 0;
+}
+
+.save-button {
+  margin: 0;
+}

@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/profile/index",
+    "pages/treehole/index",
+    "pages/training/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "西电教师服务",
+    "navigationBarBackgroundColor": "#c51624",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#efeeee"
+  },
+  "tabBar": {
+    "color": "#8c98a6",
+    "selectedColor": "#c51624",
+    "backgroundColor": "#f6f6f6",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "工作台",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/treehole/index",
+        "text": "树洞",
+        "iconPath": "assets/tabbar/treehole.png",
+        "selectedIconPath": "assets/tabbar/treehole-active.png"
+      },
+      {
+        "pagePath": "pages/training/index",
+        "text": "培训",
+        "iconPath": "assets/tabbar/training.png",
+        "selectedIconPath": "assets/tabbar/training-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/tabbar/profile.png",
+        "selectedIconPath": "assets/tabbar/profile-active.png"
+      }
+    ]
+  }
+}

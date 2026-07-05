@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+admin/node_modules/
+
+# Build outputs
+dist/
+admin/dist/
+
+# Local caches
+.cache/
+.codex/
+.agents/
+
+# Runtime uploads and logs
+uploads/
+server/uploads/
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# WeChat developer private settings
+miniprogram/project.private.config.json
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
