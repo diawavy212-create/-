@@ -252,6 +252,20 @@ func removeTeacher(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		var role string
+		if err := db.QueryRowContext(c.Request.Context(), `SELECT role FROM teacher WHERE id = ?`, teacherID).Scan(&role); err != nil {
+			if err == sql.ErrNoRows {
+				response.Fail(c, http.StatusNotFound, "teacher not found")
+				return
+			}
+			response.Fail(c, http.StatusInternalServerError, "teacher query failed")
+			return
+		}
+		if role == "school_admin" {
+			response.Fail(c, http.StatusBadRequest, "校级管理员账号不能删除")
+			return
+		}
+
 		result, err := db.ExecContext(c.Request.Context(), `DELETE FROM teacher WHERE id = ?`, teacherID)
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "teacher delete failed")
