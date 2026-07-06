@@ -17,7 +17,7 @@
   <view class="hero pressable">
     <view>
       <view class="hero-kicker">教师综合服务平台</view>
-      <view class="hero-title">教师服务<br />三项入口</view>
+      <view class="hero-title">教师服务</view>
       <view class="hero-sub">个人信息管理 | 教师树洞 | 思政培训活动</view>
     </view>
     <view class="hero-chart">
