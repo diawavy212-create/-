@@ -705,16 +705,8 @@ func isAdmin(c *gin.Context) bool {
 	return role == "party_admin" || role == "school_admin"
 }
 
-func listScope(c *gin.Context, db *sql.DB) (string, []any, error) {
-	role := c.GetString("role")
-	if role != "party_admin" {
-		return "", nil, nil
-	}
-	var college string
-	if err := db.QueryRowContext(c.Request.Context(), `SELECT college FROM teacher WHERE id = ?`, c.GetInt64("userID")).Scan(&college); err != nil {
-		return "", nil, err
-	}
-	return "WHERE level = 0 OR sponsor_unit = ? OR organizer_unit = ?", []any{college, college}, nil
+func listScope(_ *gin.Context, _ *sql.DB) (string, []any, error) {
+	return "", nil, nil
 }
 
 func statusClause(where string, clause string) string {
