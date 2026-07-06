@@ -28,6 +28,10 @@
         <input value="{{form.name}}" placeholder="请输入姓名" data-field="name" bindinput="onInput" />
       </view>
       <view class="form-row">
+        <text>单位/学院</text>
+        <input value="{{form.college}}" placeholder="请输入单位/学院" data-field="college" bindinput="onInput" />
+      </view>
+      <view class="form-row">
         <text>部门</text>
         <input value="{{form.department}}" placeholder="请输入部门" data-field="department" bindinput="onInput" />
       </view>
@@ -45,6 +49,10 @@
       <view class="info-row">
         <text>姓名</text>
         <text>{{teacher.name || "-"}}</text>
+      </view>
+      <view class="info-row">
+        <text>单位/学院</text>
+        <text>{{teacher.college || "-"}}</text>
       </view>
       <view class="info-row">
         <text>部门</text>

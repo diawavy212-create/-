@@ -4,6 +4,7 @@ const app = getApp()
 function buildForm(teacher) {
   return {
     name: teacher.name || "",
+    college: teacher.college || "",
     department: teacher.department || "",
     phone: teacher.phone || "",
     email: teacher.email || ""
@@ -74,7 +75,9 @@ Page({
         ...cachedUser,
         name: data.name,
         realName: data.name,
-        employeeNo: data.employeeNo
+        employeeNo: data.employeeNo,
+        college: data.college,
+        department: data.department
       }
       app.globalData.user = nextUser
       wx.setStorageSync("user", nextUser)

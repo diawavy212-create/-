@@ -31,6 +31,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *sql.DB) {
 		userID := c.GetInt64("userID")
 		var req struct {
 			Name       string `json:"name"`
+			College    string `json:"college"`
 			Department string `json:"department"`
 			Phone      string `json:"phone"`
 			Email      string `json:"email"`
@@ -41,18 +42,20 @@ func RegisterRoutes(rg *gin.RouterGroup, db *sql.DB) {
 		}
 
 		req.Name = strings.TrimSpace(req.Name)
+		req.College = strings.TrimSpace(req.College)
 		req.Department = strings.TrimSpace(req.Department)
 		req.Phone = strings.TrimSpace(req.Phone)
 		req.Email = strings.TrimSpace(req.Email)
-		if req.Name == "" {
-			response.Fail(c, http.StatusBadRequest, "name is required")
+		if req.Name == "" || req.College == "" {
+			response.Fail(c, http.StatusBadRequest, "name and college are required")
 			return
 		}
 
 		_, err := db.ExecContext(
 			c.Request.Context(),
-			`UPDATE teacher SET name = ?, department = ?, phone = ?, email = ? WHERE id = ?`,
+			`UPDATE teacher SET name = ?, college = ?, department = ?, phone = ?, email = ? WHERE id = ?`,
 			req.Name,
+			req.College,
 			req.Department,
 			req.Phone,
 			req.Email,
