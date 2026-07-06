@@ -83,6 +83,9 @@
     </el-dialog>
 
     <el-dialog v-model="recordsVisible" :title="`${currentTrainingTitle} 报名名单`" width="1080px">
+      <div class="records-toolbar">
+        <el-button type="success" :disabled="!records.length" @click="exportRecords">导出 Excel 名单</el-button>
+      </div>
       <el-table v-loading="recordsLoading" :data="records" stripe empty-text="暂无报名记录">
         <el-table-column prop="teacherName" label="姓名" width="130" />
         <el-table-column prop="employeeNo" label="工号" width="130" />
@@ -223,6 +226,47 @@ function auditApply(row, applyStatus) {
   })
 }
 
+function exportRecords() {
+  if (!records.value.length) {
+    ElMessage.warning("暂无报名名单可导出")
+    return
+  }
+  const rows = [
+    ["姓名", "工号", "学院", "部门", "手机", "邮箱", "报名状态", "报名时间"],
+    ...records.value.map(row => [
+      row.teacherName || "",
+      row.employeeNo || "",
+      row.college || "",
+      row.department || "",
+      row.phone || "",
+      row.email || "",
+      applyStatusText(row.applyStatus),
+      row.applyTime || ""
+    ])
+  ]
+  const html = `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${rows
+    .map(row => `<tr>${row.map(value => `<td>${escapeCell(value)}</td>`).join("")}</tr>`)
+    .join("")}</table></body></html>`
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" })
+  const link = document.createElement("a")
+  link.href = URL.createObjectURL(blob)
+  link.download = `${safeFileName(currentTrainingTitle.value || "报名名单")}.xls`
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+function escapeCell(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+}
+
+function safeFileName(value) {
+  return String(value).replace(/[\\/:*?"<>|]/g, "_")
+}
+
 function trainingStatusText(status) {
   const map = {
     draft: "草稿",
@@ -249,5 +293,11 @@ onMounted(loadTrainings)
 <style scoped>
 .full-width {
   width: 100%;
+}
+
+.records-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 </style>
