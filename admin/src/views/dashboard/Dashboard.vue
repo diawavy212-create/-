@@ -90,20 +90,7 @@
           <span>报名记录</span>
           <strong>{{ system.trainingRecords }}</strong>
         </div>
-        <div class="capacity-item">
-          <span>附件图片</span>
-          <strong>{{ system.attachmentCount }} 个</strong>
-        </div>
-        <div class="capacity-item">
-          <span>附件占用</span>
-          <strong>{{ system.attachmentSizeText }}</strong>
-        </div>
-        <div class="capacity-item">
-          <span>数据库占用</span>
-          <strong>{{ system.databaseSizeText }}</strong>
-        </div>
       </div>
-      <div class="capacity-note">附件目录：{{ system.attachmentPath }}</div>
     </div>
 
     <div class="panel">
@@ -145,11 +132,7 @@ const system = ref({
   teachers: 0,
   appeals: 0,
   trainings: 0,
-  trainingRecords: 0,
-  attachmentCount: 0,
-  attachmentSizeText: "0 B",
-  attachmentPath: "uploads/treeholes",
-  databaseSizeText: "0 B"
+  trainingRecords: 0
 })
 
 function load() {
@@ -173,11 +156,7 @@ function load() {
       teachers: systemData.teachers || 0,
       appeals: systemData.appeals || 0,
       trainings: systemData.trainings || 0,
-      trainingRecords: systemData.trainingRecords || 0,
-      attachmentCount: systemData.attachmentCount || 0,
-      attachmentSizeText: systemData.attachmentSizeText || "0 B",
-      attachmentPath: systemData.attachmentPath || "uploads/treeholes",
-      databaseSizeText: systemData.databaseSizeText || "0 B"
+      trainingRecords: systemData.trainingRecords || 0
     }
   }).catch(error => {
     ElMessage.error(error.message || "工作台数据加载失败")
@@ -248,12 +227,6 @@ onMounted(load)
   margin-top: 8px;
   color: #0f172a;
   font-size: 20px;
-}
-
-.capacity-note {
-  margin-top: 12px;
-  color: #94a3b8;
-  font-size: 13px;
 }
 
 @media (max-width: 1200px) {
