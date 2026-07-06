@@ -81,6 +81,18 @@ function buildTrainingTodos(trainings, ledgers, now) {
   return todos
 }
 
+function buildStats(treeholes, trainings) {
+  const appeals = treeholes || []
+  const openTrainings = trainings || []
+  const feedbackCount = appeals.filter(item => item.status === 2 || item.handleContent).length
+  const followCount = appeals.filter(item => item.status === 0 || item.status === 1).length
+  return [
+    { value: feedbackCount, label: "树洞反馈" },
+    { value: followCount, label: "待跟进" },
+    { value: openTrainings.length, label: "开放培训" }
+  ]
+}
+
 Page({
   data: {
     greeting: "您好",
@@ -93,9 +105,9 @@ Page({
       { title: "思政培训活动", icon: "学", color: "dark-red", path: "/pages/training/index" }
     ],
     stats: [
-      { value: 2, label: "本月办理" },
-      { value: 1, label: "待跟进" },
-      { value: 3, label: "已归档" }
+      { value: 0, label: "树洞反馈" },
+      { value: 0, label: "待跟进" },
+      { value: 0, label: "开放培训" }
     ]
   },
 
@@ -125,18 +137,20 @@ Page({
 
   loadTodos(now) {
     Promise.all([
-      request({ url: "/treeholes", data: { page: 1, size: 2 } }).catch(() => ({ list: [] })),
-      request({ url: "/trainings", data: { page: 1, size: 2, status: 1 } }).catch(() => ({ list: [] })),
-      request({ url: "/trainings/ledgers", data: { page: 1, size: 2 } }).catch(() => ({ list: [] }))
+      request({ url: "/treeholes", data: { page: 1, size: 20 } }).catch(() => ({ list: [] })),
+      request({ url: "/trainings", data: { page: 1, size: 20, status: 1 } }).catch(() => ({ list: [] })),
+      request({ url: "/trainings/ledgers", data: { page: 1, size: 20 } }).catch(() => ({ list: [] }))
     ]).then(([treeholes, trainings, ledgers]) => {
       const todos = [
         ...buildTreeholeTodos(treeholes.list),
         ...buildTrainingTodos(trainings.list, ledgers.list, now)
       ].slice(0, 3)
+      const stats = buildStats(treeholes.list, trainings.list)
 
       if (todos.length > 0) {
         this.setData({ todos })
       }
+      this.setData({ stats })
     })
   },
 
