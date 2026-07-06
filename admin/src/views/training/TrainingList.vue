@@ -7,6 +7,8 @@
     <div class="panel">
       <el-table v-loading="loading" :data="items" stripe>
         <el-table-column prop="title" label="培训名称" min-width="220" />
+        <el-table-column prop="sponsorUnit" label="主办单位" min-width="150" />
+        <el-table-column prop="organizerUnit" label="承办学院" min-width="150" />
         <el-table-column prop="location" label="地点" min-width="140" />
         <el-table-column prop="quota" label="名额" width="100" />
         <el-table-column prop="hours" label="学时" width="100" />
@@ -80,10 +82,11 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="recordsVisible" :title="`${currentTrainingTitle} 报名名单`" width="900px">
+    <el-dialog v-model="recordsVisible" :title="`${currentTrainingTitle} 报名名单`" width="1080px">
       <el-table v-loading="recordsLoading" :data="records" stripe empty-text="暂无报名记录">
         <el-table-column prop="teacherName" label="姓名" width="130" />
         <el-table-column prop="employeeNo" label="工号" width="130" />
+        <el-table-column prop="college" label="学院" min-width="150" />
         <el-table-column prop="department" label="部门" min-width="150" />
         <el-table-column prop="phone" label="手机" width="150" />
         <el-table-column prop="email" label="邮箱" min-width="190" />
@@ -91,6 +94,12 @@
           <template #default="{ row }">{{ applyStatusText(row.applyStatus) }}</template>
         </el-table-column>
         <el-table-column prop="applyTime" label="报名时间" width="170" />
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link :disabled="row.applyStatus === 1" @click="auditApply(row, 1)">通过</el-button>
+            <el-button type="danger" link :disabled="row.applyStatus === 2" @click="auditApply(row, 2)">驳回</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-dialog>
   </div>
@@ -107,6 +116,7 @@ const records = ref([])
 const recordsVisible = ref(false)
 const recordsLoading = ref(false)
 const currentTrainingTitle = ref("")
+const currentTrainingId = ref(0)
 const formVisible = ref(false)
 const saving = ref(false)
 const form = ref(defaultForm())
@@ -187,6 +197,7 @@ function deleteTraining(row) {
 
 function openRecords(row) {
   currentTrainingTitle.value = row.title
+  currentTrainingId.value = row.id
   recordsVisible.value = true
   recordsLoading.value = true
   records.value = []
@@ -197,6 +208,19 @@ function openRecords(row) {
     .finally(() => {
       recordsLoading.value = false
     })
+}
+
+function auditApply(row, applyStatus) {
+  const label = applyStatus === 1 ? "通过" : "驳回"
+  http.post(`/trainings/${currentTrainingId.value}/audit`, {
+    teacherId: row.teacherId,
+    applyStatus
+  }).then(() => {
+    ElMessage.success(`${label}成功`)
+    row.applyStatus = applyStatus
+  }).catch(error => {
+    ElMessage.error(error.message || `${label}失败`)
+  })
 }
 
 function trainingStatusText(status) {
