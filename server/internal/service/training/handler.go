@@ -423,6 +423,14 @@ func audit(db *sql.DB) gin.HandlerFunc {
 		}
 
 		if req.HasApplyStatus {
+			if req.ApplyStatus == 2 {
+				if _, err := db.ExecContext(c.Request.Context(), `DELETE FROM training_record WHERE training_id = ? AND teacher_id = ?`, pathID(c), req.TeacherID); err != nil {
+					response.Fail(c, http.StatusInternalServerError, "training apply reject failed")
+					return
+				}
+				response.OK(c, gin.H{"trainingId": pathID(c), "rejected": true, "removed": true})
+				return
+			}
 			if _, err := db.ExecContext(c.Request.Context(), `UPDATE training_record SET apply_status = ? WHERE training_id = ? AND teacher_id = ?`, req.ApplyStatus, pathID(c), req.TeacherID); err != nil {
 				response.Fail(c, http.StatusInternalServerError, "training apply audit failed")
 				return

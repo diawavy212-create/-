@@ -220,6 +220,14 @@ function auditApply(row, applyStatus) {
     applyStatus
   }).then(() => {
     ElMessage.success(`${label}成功`)
+    if (applyStatus === 2) {
+      records.value = records.value.filter(item => item.teacherId !== row.teacherId)
+      const training = items.value.find(item => item.id === currentTrainingId.value)
+      if (training) {
+        training.enrolledCount = Math.max(Number(training.enrolledCount || 0) - 1, 0)
+      }
+      return
+    }
     row.applyStatus = applyStatus
   }).catch(error => {
     ElMessage.error(error.message || `${label}失败`)
