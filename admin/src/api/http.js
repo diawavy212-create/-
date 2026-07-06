@@ -13,10 +13,27 @@ http.interceptors.request.use(config => {
   return config
 })
 
+function clearExpiredSession() {
+  localStorage.removeItem("admin_token")
+  localStorage.removeItem("admin_user")
+  if (window.location.pathname !== "/") {
+    window.history.replaceState({}, "", "/")
+  }
+  window.dispatchEvent(new Event("admin-session-expired"))
+}
+
 http.interceptors.response.use(response => {
   const body = response.data
   if (body.code !== 200 && body.code !== 0) {
+    if (body.code === 401) {
+      clearExpiredSession()
+    }
     return Promise.reject(new Error(body.msg || body.message || "请求失败"))
   }
   return body.data
+}, error => {
+  if (error.response && error.response.status === 401) {
+    clearExpiredSession()
+  }
+  return Promise.reject(error)
 })

@@ -49,6 +49,7 @@ const role = ref("party_admin")
 const loading = ref(false)
 
 onMounted(() => {
+  window.addEventListener("admin-session-expired", logout)
   const params = new URLSearchParams(window.location.search)
   const casTicket = params.get("ticket")
   if (casTicket && !session.token) {
