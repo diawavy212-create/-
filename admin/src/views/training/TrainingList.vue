@@ -84,6 +84,8 @@
 
     <el-dialog v-model="recordsVisible" :title="`${currentTrainingTitle} 报名名单`" width="1080px">
       <div class="records-toolbar">
+        <el-button type="primary" :disabled="!pendingRecords.length" @click="auditAll(1)">全部通过</el-button>
+        <el-button type="danger" :disabled="!records.length" @click="auditAll(2)">全部驳回</el-button>
         <el-button type="success" :disabled="!records.length" @click="exportRecords">导出 Excel 名单</el-button>
       </div>
       <el-table v-loading="recordsLoading" :data="records" stripe empty-text="暂无报名记录">
@@ -110,7 +112,7 @@
 
 <script setup>
 import { ElMessage, ElMessageBox } from "element-plus"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { http } from "../../api/http"
 
 const items = ref([])
@@ -123,6 +125,7 @@ const currentTrainingId = ref(0)
 const formVisible = ref(false)
 const saving = ref(false)
 const form = ref(defaultForm())
+const pendingRecords = computed(() => records.value.filter(row => row.applyStatus !== 1))
 
 function defaultForm() {
   return {
@@ -234,6 +237,46 @@ function auditApply(row, applyStatus) {
   })
 }
 
+function auditAll(applyStatus) {
+  const targets = applyStatus === 1 ? pendingRecords.value : records.value
+  if (!targets.length) {
+    ElMessage.warning(applyStatus === 1 ? "没有待通过的报名" : "暂无报名名单可驳回")
+    return
+  }
+  const label = applyStatus === 1 ? "全部通过" : "全部驳回"
+  ElMessageBox.confirm(
+    applyStatus === 1
+      ? `确定通过当前 ${targets.length} 条报名吗？`
+      : `确定驳回当前 ${targets.length} 条报名吗？驳回后名单会删除，小程序端恢复为可报名。`,
+    label,
+    { type: "warning" }
+  ).then(() => {
+    recordsLoading.value = true
+    return Promise.all(targets.map(row => http.post(`/trainings/${currentTrainingId.value}/audit`, {
+      teacherId: row.teacherId,
+      applyStatus
+    })))
+  }).then(() => {
+    ElMessage.success(`${label}成功`)
+    if (applyStatus === 1) {
+      records.value = records.value.map(row => ({ ...row, applyStatus: 1 }))
+      return
+    }
+    const removedCount = targets.length
+    records.value = []
+    const training = items.value.find(item => item.id === currentTrainingId.value)
+    if (training) {
+      training.enrolledCount = Math.max(Number(training.enrolledCount || 0) - removedCount, 0)
+    }
+  }).catch(error => {
+    if (error !== "cancel") {
+      ElMessage.error(error.message || `${label}失败`)
+    }
+  }).finally(() => {
+    recordsLoading.value = false
+  })
+}
+
 function exportRecords() {
   if (!records.value.length) {
     ElMessage.warning("暂无报名名单可导出")
@@ -305,6 +348,7 @@ onMounted(loadTrainings)
 
 .records-toolbar {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
   margin-bottom: 12px;
 }
