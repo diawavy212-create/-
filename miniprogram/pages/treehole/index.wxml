@@ -50,4 +50,45 @@
     </block>
     <view wx:else class="empty">暂无诉求记录</view>
   </view>
+
+  <view wx:if="{{detailVisible}}" class="detail-mask" bindtap="closeDetail">
+    <view class="detail-panel" catchtap="noop">
+      <view class="detail-header">
+        <view class="detail-title">{{currentDetail.displayTitle}}</view>
+        <view class="detail-close" bindtap="closeDetail">×</view>
+      </view>
+      <scroll-view class="detail-scroll" scroll-y>
+        <view class="detail-section">
+          <view class="detail-label">内容</view>
+          <view class="detail-content">{{currentDetail.content || "-"}}</view>
+        </view>
+        <view class="detail-grid">
+          <view class="detail-item">
+            <text>类目</text>
+            <view>{{currentDetail.category || "-"}}</view>
+          </view>
+          <view class="detail-item">
+            <text>紧急程度</text>
+            <view>{{currentDetail.emergencyText || "-"}}</view>
+          </view>
+          <view class="detail-item">
+            <text>实名/匿名</text>
+            <view>{{currentDetail.anonymousText || "-"}}</view>
+          </view>
+          <view class="detail-item">
+            <text>状态</text>
+            <view>{{currentDetail.statusText || "-"}}</view>
+          </view>
+        </view>
+        <view class="detail-section">
+          <view class="detail-label">反馈</view>
+          <view class="detail-content">{{currentDetail.handleContent || "暂无"}}</view>
+        </view>
+        <view wx:if="{{currentDetail.attachmentPreviewUrl}}" class="detail-section">
+          <view class="detail-label">附件</view>
+          <image class="detail-image" src="{{currentDetail.attachmentPreviewUrl}}" mode="aspectFill" bindtap="previewDetailAttachment"></image>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 </view>

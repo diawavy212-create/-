@@ -27,12 +27,9 @@
   <div v-else class="login-page">
     <div class="login-panel">
       <h1>管理后台登录</h1>
-      <p>生产环境通过学校 CAS 回跳并携带 ticket 后自动登录。</p>
-      <el-input v-model="ticket" placeholder="本地联调用 CAS ticket 或 college-admin" />
-      <el-select v-model="role" class="login-role">
-        <el-option label="二级党委管理员" value="party_admin" />
-        <el-option label="校级管理员" value="school_admin" />
-      </el-select>
+      <p>请输入管理员账号和密码登录后台。</p>
+      <el-input v-model="username" placeholder="账号：school-admin 或 college-admin" />
+      <el-input v-model="password" type="password" show-password placeholder="密码：admin123456" @keyup.enter="login" />
       <el-button type="primary" :loading="loading" @click="login">登录</el-button>
     </div>
   </div>
@@ -40,12 +37,14 @@
 
 <script setup>
 import { onMounted, ref } from "vue"
+import { ElMessage } from "element-plus"
 import { useSessionStore } from "./stores/session"
 import { http } from "./api/http"
 
 const session = useSessionStore()
 const ticket = ref("")
-const role = ref("party_admin")
+const username = ref("school-admin")
+const password = ref("")
 const loading = ref(false)
 
 onMounted(() => {
@@ -54,20 +53,40 @@ onMounted(() => {
   const casTicket = params.get("ticket")
   if (casTicket && !session.token) {
     ticket.value = casTicket
-    login()
+    casLogin()
   }
 })
 
 function login() {
+  if (!username.value || !password.value) {
+    ElMessage.warning("请填写账号和密码")
+    return
+  }
+  loading.value = true
+  http.post("/auth/admin-login", {
+    username: username.value,
+    password: password.value
+  }).then(data => {
+    session.save(data)
+    window.history.replaceState({}, "", window.location.pathname)
+  }).catch(error => {
+    ElMessage.error(error.message || "登录失败")
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+function casLogin() {
   if (!ticket.value) return
   loading.value = true
   http.post("/auth/cas-login", {
     ticket: ticket.value,
-    role: role.value,
     service: `${window.location.origin}${window.location.pathname}`
   }).then(data => {
     session.save(data)
     window.history.replaceState({}, "", window.location.pathname)
+  }).catch(error => {
+    ElMessage.error(error.message || "登录失败")
   }).finally(() => {
     loading.value = false
   })

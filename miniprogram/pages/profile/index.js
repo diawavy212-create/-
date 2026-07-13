@@ -16,6 +16,7 @@ Page({
     teacher: {},
     form: buildForm({}),
     editing: false,
+    loading: true,
     saving: false
   },
 
@@ -23,14 +24,21 @@ Page({
     this.loadProfile()
   },
 
+  onShow() {
+    this.loadProfile()
+  },
+
   loadProfile() {
+    this.setData({ loading: true })
     request({ url: "/profile/me" }).then(data => {
       this.setData({
         teacher: data,
         form: buildForm(data)
       })
-    }).catch(() => {
-      wx.showToast({ title: "信息加载失败", icon: "none" })
+    }).catch(err => {
+      wx.showToast({ title: err.message || "信息加载失败", icon: "none" })
+    }).finally(() => {
+      this.setData({ loading: false })
     })
   },
 
@@ -58,9 +66,15 @@ Page({
 
   saveProfile() {
     if (this.data.saving) return
-    const form = this.data.form
-    if (!form.name.trim()) {
-      wx.showToast({ title: "请输入姓名", icon: "none" })
+    const form = {
+      name: this.data.form.name.trim(),
+      college: this.data.form.college.trim(),
+      department: this.data.form.department.trim(),
+      phone: this.data.form.phone.trim(),
+      email: this.data.form.email.trim()
+    }
+    if (!form.name || !form.college) {
+      wx.showToast({ title: "请输入姓名和学院", icon: "none" })
       return
     }
     this.setData({ saving: true })
@@ -87,8 +101,8 @@ Page({
         editing: false
       })
       wx.showToast({ title: "保存成功", icon: "success" })
-    }).catch(() => {
-      wx.showToast({ title: "保存失败", icon: "none" })
+    }).catch(err => {
+      wx.showToast({ title: err.message || "保存失败", icon: "none" })
     }).finally(() => {
       this.setData({ saving: false })
     })

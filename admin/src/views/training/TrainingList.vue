@@ -5,24 +5,28 @@
       <el-button type="primary" @click="openCreate">发布培训</el-button>
     </div>
     <div class="panel">
-      <el-table v-loading="loading" :data="items" stripe>
-        <el-table-column prop="title" label="培训名称" min-width="220" />
-        <el-table-column prop="sponsorUnit" label="主办单位" min-width="150" />
-        <el-table-column prop="organizerUnit" label="承办学院" min-width="150" />
-        <el-table-column prop="location" label="地点" min-width="140" />
-        <el-table-column prop="quota" label="名额" width="100" />
-        <el-table-column prop="hours" label="学时" width="100" />
-        <el-table-column label="状态" width="120">
+      <el-table v-loading="loading" :data="items" stripe class="compact-table">
+        <el-table-column prop="title" label="培训名称" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="sponsorUnit" label="主办单位" width="110" show-overflow-tooltip />
+        <el-table-column prop="organizerUnit" label="承办学院" width="110" show-overflow-tooltip />
+        <el-table-column prop="location" label="地点" width="90" show-overflow-tooltip />
+        <el-table-column label="时间" width="230" class-name="nowrap-column">
+          <template #default="{ row }">{{ trainingTimeText(row) }}</template>
+        </el-table-column>
+        <el-table-column prop="quota" label="名额" width="70" />
+        <el-table-column label="状态" width="90">
           <template #default="{ row }">{{ trainingStatusText(row.statusText) }}</template>
         </el-table-column>
-        <el-table-column label="已报名" width="110">
+        <el-table-column label="已报名" width="95" class-name="nowrap-column">
           <template #default="{ row }">{{ row.enrolledCount || 0 }} 人</template>
         </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="150" class-name="action-column">
           <template #default="{ row }">
-            <el-button type="primary" link @click="openRecords(row)">报名名单</el-button>
-            <el-button type="primary" link @click="openEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="deleteTraining(row)">删除</el-button>
+            <div class="action-row">
+              <el-button type="primary" link @click="openRecords(row)">名单</el-button>
+              <el-button type="primary" link @click="openEdit(row)">编辑</el-button>
+              <el-button type="danger" link @click="deleteTraining(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -329,6 +333,18 @@ function trainingStatusText(status) {
   return map[status] || status || "-"
 }
 
+function shortTime(value) {
+  if (!value) return ""
+  return String(value).replace(/:\d{2}$/, "")
+}
+
+function trainingTimeText(row) {
+  const start = shortTime(row.startTime)
+  const end = shortTime(row.endTime)
+  if (start && end) return `${start} 至 ${end}`
+  return start || end || "-"
+}
+
 function applyStatusText(status) {
   const map = {
     0: "待审核",
@@ -351,5 +367,22 @@ onMounted(loadTrainings)
   gap: 10px;
   justify-content: flex-end;
   margin-bottom: 12px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-row :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+:deep(.compact-table .cell),
+:deep(.nowrap-column .cell),
+:deep(.action-column .cell) {
+  white-space: nowrap;
 }
 </style>

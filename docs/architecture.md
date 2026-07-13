@@ -9,13 +9,13 @@ flowchart TD
   Gateway["API 网关（Gin）"]
   Services["业务逻辑层"]
   MySQL[("MySQL 数据库")]
-  CAS["统一身份认证（后续接入）"]
+  Auth["登录认证\n微信登录 / 后台账号密码 / CAS 预留"]
 
   Mini --> Gateway
   Admin --> Gateway
   Gateway --> Services
   Services --> MySQL
-  Services --> CAS
+  Services --> Auth
 ```
 
 ## 功能结构

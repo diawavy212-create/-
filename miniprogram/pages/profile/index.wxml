@@ -3,74 +3,78 @@
     <view class="nav-title">个人信息管理</view>
   </view>
 
-  <view class="card user-card">
-    <view class="avatar">教</view>
-    <view class="user-copy">
-      <view class="user-name">{{teacher.name || "教师用户"}}</view>
-      <view class="muted">{{teacher.department || "教师端个人信息管理"}}</view>
-    </view>
-    <button wx:if="{{!editing}}" class="edit-button" bindtap="startEdit">编辑信息</button>
-  </view>
+  <view wx:if="{{loading}}" class="empty">正在加载个人信息...</view>
 
-  <view class="card info-card">
-    <view class="section-title">
-      <text>{{editing ? "编辑信息" : "基本信息"}}</text>
+  <block wx:else>
+    <view class="card user-card">
+      <view class="avatar">教</view>
+      <view class="user-copy">
+        <view class="user-name">{{teacher.name || "教师用户"}}</view>
+        <view class="muted">{{teacher.department || "教师端个人信息管理"}}</view>
+      </view>
+      <button wx:if="{{!editing}}" class="edit-button" bindtap="startEdit">编辑信息</button>
     </view>
 
-    <view class="info-row">
-      <text>工号</text>
-      <text>{{teacher.employeeNo || "-"}}</text>
+    <view class="card info-card">
+      <view class="section-title">
+        <text>{{editing ? "编辑信息" : "基本信息"}}</text>
+      </view>
+
+      <view class="info-row">
+        <text>工号</text>
+        <text>{{teacher.employeeNo || "-"}}</text>
+      </view>
+
+      <block wx:if="{{editing}}">
+        <view class="form-row">
+          <text>姓名</text>
+          <input value="{{form.name}}" placeholder="请输入姓名" data-field="name" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <text>单位/学院</text>
+          <input value="{{form.college}}" placeholder="请输入单位/学院" data-field="college" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <text>部门</text>
+          <input value="{{form.department}}" placeholder="请输入部门" data-field="department" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <text>手机</text>
+          <input value="{{form.phone}}" placeholder="请输入手机号" data-field="phone" bindinput="onInput" />
+        </view>
+        <view class="form-row">
+          <text>邮箱</text>
+          <input value="{{form.email}}" placeholder="请输入邮箱" data-field="email" bindinput="onInput" />
+        </view>
+      </block>
+
+      <block wx:else>
+        <view class="info-row">
+          <text>姓名</text>
+          <text>{{teacher.name || "-"}}</text>
+        </view>
+        <view class="info-row">
+          <text>单位/学院</text>
+          <text>{{teacher.college || "-"}}</text>
+        </view>
+        <view class="info-row">
+          <text>部门</text>
+          <text>{{teacher.department || "-"}}</text>
+        </view>
+        <view class="info-row">
+          <text>手机</text>
+          <text>{{teacher.phone || "-"}}</text>
+        </view>
+        <view class="info-row">
+          <text>邮箱</text>
+          <text>{{teacher.email || "-"}}</text>
+        </view>
+      </block>
     </view>
 
-    <block wx:if="{{editing}}">
-      <view class="form-row">
-        <text>姓名</text>
-        <input value="{{form.name}}" placeholder="请输入姓名" data-field="name" bindinput="onInput" />
-      </view>
-      <view class="form-row">
-        <text>单位/学院</text>
-        <input value="{{form.college}}" placeholder="请输入单位/学院" data-field="college" bindinput="onInput" />
-      </view>
-      <view class="form-row">
-        <text>部门</text>
-        <input value="{{form.department}}" placeholder="请输入部门" data-field="department" bindinput="onInput" />
-      </view>
-      <view class="form-row">
-        <text>手机</text>
-        <input value="{{form.phone}}" placeholder="请输入手机号" data-field="phone" bindinput="onInput" />
-      </view>
-      <view class="form-row">
-        <text>邮箱</text>
-        <input value="{{form.email}}" placeholder="请输入邮箱" data-field="email" bindinput="onInput" />
-      </view>
-    </block>
-
-    <block wx:else>
-      <view class="info-row">
-        <text>姓名</text>
-        <text>{{teacher.name || "-"}}</text>
-      </view>
-      <view class="info-row">
-        <text>单位/学院</text>
-        <text>{{teacher.college || "-"}}</text>
-      </view>
-      <view class="info-row">
-        <text>部门</text>
-        <text>{{teacher.department || "-"}}</text>
-      </view>
-      <view class="info-row">
-        <text>手机</text>
-        <text>{{teacher.phone || "-"}}</text>
-      </view>
-      <view class="info-row">
-        <text>邮箱</text>
-        <text>{{teacher.email || "-"}}</text>
-      </view>
-    </block>
-  </view>
-
-  <view wx:if="{{editing}}" class="action-row">
-    <button class="ghost-button" bindtap="cancelEdit" disabled="{{saving}}">取消</button>
-    <button class="primary-button save-button" bindtap="saveProfile" loading="{{saving}}" disabled="{{saving}}">保存</button>
-  </view>
+    <view wx:if="{{editing}}" class="action-row">
+      <button class="ghost-button" bindtap="cancelEdit" disabled="{{saving}}">取消</button>
+      <button class="primary-button save-button" bindtap="saveProfile" loading="{{saving}}" disabled="{{saving}}">保存</button>
+    </view>
+  </block>
 </view>

@@ -20,9 +20,13 @@ function request(options) {
             wx.removeStorageSync("token")
             app.globalData.token = ""
           }
-          reject(new Error(res.data && (res.data.msg || res.data.message) ? (res.data.msg || res.data.message) : "请求失败"))
+          const error = new Error(res.data && (res.data.msg || res.data.message) ? (res.data.msg || res.data.message) : "请求失败")
+          error.statusCode = res.statusCode
+          reject(error)
         },
-        fail: reject
+        fail(err) {
+          reject(new Error(err && err.errMsg ? err.errMsg : "请求失败"))
+        }
       })
     })
   })

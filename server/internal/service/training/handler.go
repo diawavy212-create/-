@@ -484,7 +484,9 @@ func records(db *sql.DB) gin.HandlerFunc {
 		rows, err := db.QueryContext(
 			c.Request.Context(),
 			`SELECT r.id, r.training_id, t.title, COALESCE(DATE_FORMAT(r.sign_in_time, '%Y-%m-%d %H:%i:%s'), ''),
-			 r.study_hours, r.apply_status, r.achievement_status, COALESCE(r.achievement_url, '')
+			 r.study_hours, r.apply_status, r.achievement_status, COALESCE(r.achievement_url, ''),
+			 COALESCE(DATE_FORMAT(t.start_time, '%Y-%m-%d %H:%i:%s'), ''), COALESCE(DATE_FORMAT(t.end_time, '%Y-%m-%d %H:%i:%s'), ''),
+			 COALESCE(t.location, ''), COALESCE(t.sponsor_unit, ''), COALESCE(t.organizer_unit, ''), t.quota
 			 FROM training_record r
 			 JOIN training t ON t.id = r.training_id
 			 WHERE r.teacher_id = ?
@@ -501,7 +503,22 @@ func records(db *sql.DB) gin.HandlerFunc {
 		items := make([]gin.H, 0)
 		for rows.Next() {
 			var item ledgerItem
-			if err := rows.Scan(&item.ID, &item.TrainingID, &item.Title, &item.CompletedAt, &item.LearningHour, &item.ApplyStatus, &item.AchievementStatus, &item.AchievementURL); err != nil {
+			if err := rows.Scan(
+				&item.ID,
+				&item.TrainingID,
+				&item.Title,
+				&item.CompletedAt,
+				&item.LearningHour,
+				&item.ApplyStatus,
+				&item.AchievementStatus,
+				&item.AchievementURL,
+				&item.StartTime,
+				&item.EndTime,
+				&item.Location,
+				&item.SponsorUnit,
+				&item.OrganizerUnit,
+				&item.Quota,
+			); err != nil {
 				response.Fail(c, http.StatusInternalServerError, "ledger scan failed")
 				return
 			}
@@ -582,6 +599,12 @@ type ledgerItem struct {
 	ApplyStatus       int
 	AchievementStatus int
 	AchievementURL    string
+	StartTime         string
+	EndTime           string
+	Location          string
+	SponsorUnit       string
+	OrganizerUnit     string
+	Quota             int
 }
 
 type trainingRecordItem struct {
@@ -634,6 +657,12 @@ func (i ledgerItem) toJSON() gin.H {
 		"applyStatus":       i.ApplyStatus,
 		"achievementStatus": i.AchievementStatus,
 		"achievementUrl":    i.AchievementURL,
+		"startTime":         i.StartTime,
+		"endTime":           i.EndTime,
+		"location":          i.Location,
+		"sponsorUnit":       i.SponsorUnit,
+		"organizerUnit":     i.OrganizerUnit,
+		"quota":             i.Quota,
 	}
 }
 

@@ -13,6 +13,24 @@
   font-weight: 900;
 }
 
+.training-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8rpx 18rpx;
+  margin: 12rpx 0;
+}
+
+.training-info {
+  color: #2f3a4a;
+  font-size: 26rpx;
+  line-height: 38rpx;
+  word-break: break-all;
+}
+
+.training-info.full {
+  grid-column: 1 / -1;
+}
+
 .actions {
   display: flex;
   align-items: center;

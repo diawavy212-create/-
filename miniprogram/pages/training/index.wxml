@@ -4,7 +4,14 @@
     <block wx:for="{{items}}" wx:key="id">
       <view class="training-card pressable">
         <view class="title">{{item.title}}</view>
-        <view class="muted">{{item.hours}} 学时 · {{item.statusText || item.status}} · 已报名 {{item.enrolledCount || 0}} 人</view>
+        <view class="training-detail">
+          <view class="training-info">主办：{{item.sponsorText}}</view>
+          <view class="training-info">承办：{{item.organizerText}}</view>
+          <view class="training-info full">时间：{{item.timeText}}</view>
+          <view class="training-info full">地点：{{item.locationText}}</view>
+          <view class="training-info">名额：{{item.quotaText}}</view>
+        </view>
+        <view class="muted">{{item.statusText || item.status}} · 已报名 {{item.enrolledCount || 0}} 人</view>
         <view class="actions">
           <button
             class="primary-button small {{item.enrolled ? 'cancel-button' : ''}}"

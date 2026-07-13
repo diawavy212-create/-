@@ -5,58 +5,72 @@
       <el-button type="primary" @click="load">刷新</el-button>
     </div>
     <div class="panel">
-      <el-table v-loading="loading" :data="items" stripe>
-        <el-table-column prop="id" label="ID" width="80" sortable />
-        <el-table-column prop="teacherName" label="教师" width="130" />
-        <el-table-column prop="anonymousText" label="实名/匿名" width="120" />
-        <el-table-column prop="college" label="学院" width="130" />
+      <el-table v-loading="loading" :data="items" stripe class="treehole-table">
+        <el-table-column prop="displayId" label="ID" width="60" sortable />
+        <el-table-column prop="teacherName" label="教师" width="90" show-overflow-tooltip />
+        <el-table-column prop="anonymousText" label="实名/匿名" width="95" />
+        <el-table-column prop="college" label="学院" width="90" show-overflow-tooltip />
         <el-table-column
           prop="category"
           label="类目"
-          width="130"
+          width="100"
           :filters="categoryFilters"
           :filter-method="filterCategory"
         />
         <el-table-column
           prop="emergencyText"
           label="紧急程度"
-          width="130"
+          width="90"
           :filters="emergencyFilters"
           :filter-method="filterEmergency"
         />
         <el-table-column
           prop="statusText"
           label="状态"
-          width="130"
+          width="85"
           :filters="statusFilters"
           :filter-method="filterStatus"
         />
-        <el-table-column prop="title" label="标题" min-width="220" />
-        <el-table-column label="附件" width="90">
+        <el-table-column prop="title" label="标题" min-width="160" show-overflow-tooltip />
+        <el-table-column label="附件" width="65">
           <template #default="{ row }">
             <el-tag v-if="row.attachmentUrl" type="success">有</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="310" fixed="right">
+        <el-table-column label="操作" width="220" class-name="action-column">
           <template #default="{ row }">
-            <el-button size="small" @click="openDetail(row)">详情</el-button>
-            <el-button size="small" :disabled="row.status !== 0" @click="accept(row)">受理</el-button>
-            <el-button size="small" type="primary" :disabled="row.status === 4" @click="feedback(row)">反馈</el-button>
-            <el-button size="small" type="success" :disabled="row.status === 4" @click="complete(row)">已处理</el-button>
-            <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
+            <div class="action-row">
+              <el-button type="primary" link @click="openDetail(row)">详情</el-button>
+              <el-button type="primary" link :disabled="row.status !== 0" @click="accept(row)">受理</el-button>
+              <el-button type="primary" link :disabled="row.status === 4" @click="feedback(row)">反馈</el-button>
+              <el-button type="success" link :disabled="row.status === 4" @click="complete(row)">处理</el-button>
+              <el-button type="danger" link @click="remove(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
     </div>
 
-    <el-dialog v-model="detailVisible" title="诉求详情" width="680px">
-      <el-descriptions v-if="current" border :column="1">
-        <el-descriptions-item label="标题">{{ current.title }}</el-descriptions-item>
-        <el-descriptions-item label="内容">{{ current.content }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ current.statusText }}</el-descriptions-item>
-        <el-descriptions-item label="反馈">{{ current.handleContent || "暂无" }}</el-descriptions-item>
-        <el-descriptions-item label="附件">
+    <el-dialog v-model="detailVisible" title="诉求详情" width="760px">
+      <div v-if="current" class="detail-view">
+        <div class="detail-title">{{ current.title }}</div>
+        <div class="detail-meta">
+          <el-tag>{{ current.anonymousText }}</el-tag>
+          <el-tag type="warning">{{ current.category || "未分类" }}</el-tag>
+          <el-tag type="danger">{{ current.emergencyText }}</el-tag>
+          <el-tag type="info">{{ current.statusText }}</el-tag>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">内容</div>
+          <div class="detail-content">{{ current.content || current.description || "-" }}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">反馈</div>
+          <div class="detail-content">{{ current.handleContent || "暂无" }}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">附件</div>
           <el-image
             v-if="current.attachmentUrl"
             class="attachment-image"
@@ -65,8 +79,8 @@
             fit="cover"
           />
           <span v-else>暂无</span>
-        </el-descriptions-item>
-      </el-descriptions>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -114,7 +128,10 @@ function filterStatus(value, row) {
 function load() {
   loading.value = true
   http.get("/treeholes", { params: { page: 1, size: 20 } }).then(data => {
-    items.value = data.list || []
+    items.value = (data.list || []).map((item, index) => ({
+      ...item,
+      displayId: index + 1
+    }))
   }).catch(error => {
     ElMessage.error(error.message || "树洞列表加载失败")
   }).finally(() => {
@@ -190,6 +207,64 @@ onMounted(load)
 .attachment-image {
   width: 160px;
   height: 120px;
+  border-radius: 8px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-row :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+:deep(.treehole-table .cell) {
+  white-space: nowrap;
+}
+
+:deep(.action-column .cell) {
+  overflow: visible;
+}
+
+.detail-view {
+  color: #1f2937;
+}
+
+.detail-title {
+  margin-bottom: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.detail-block {
+  margin-bottom: 18px;
+}
+
+.detail-label {
+  margin-bottom: 8px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.detail-content {
+  padding: 12px;
+  min-height: 48px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
 </style>

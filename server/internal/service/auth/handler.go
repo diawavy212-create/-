@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"teacher-platform/server/internal/config"
@@ -19,10 +20,19 @@ import (
 )
 
 type loginRequest struct {
-	Code    string `json:"code"`
-	Ticket  string `json:"ticket"`
-	Role    string `json:"role"`
-	Service string `json:"service"`
+	Code       string `json:"code"`
+	ClientID   string `json:"clientId"`
+	Ticket     string `json:"ticket"`
+	Role       string `json:"role"`
+	Service    string `json:"service"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Name       string `json:"name"`
+	EmployeeNo string `json:"employeeNo"`
+	College    string `json:"college"`
+	Department string `json:"department"`
+	Phone      string `json:"phone"`
+	Email      string `json:"email"`
 }
 
 type loginUser struct {
@@ -45,19 +55,15 @@ func RegisterRoutes(rg *gin.RouterGroup, cfg config.Config, db *sql.DB) {
 			return
 		}
 
-		openID, err := exchangeWechatOpenID(c, cfg, req.Code)
+		openID, err := exchangeWechatOpenID(c, cfg, req.Code, req.ClientID)
 		if err != nil {
 			response.Fail(c, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		user, err := userByWechatOpenID(c, db, openID)
-		if err == sql.ErrNoRows && cfg.DevAuthEnabled {
-			user, err = firstUser(c, db, "teacher")
-		}
 		if err == sql.ErrNoRows {
-			response.Fail(c, http.StatusForbidden, "wechat account is not linked")
-			return
+			user, err = createWechatTeacher(c, db, openID)
 		}
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "user query failed")
@@ -65,6 +71,73 @@ func RegisterRoutes(rg *gin.RouterGroup, cfg config.Config, db *sql.DB) {
 		}
 
 		writeLogin(c, cfg, user, gin.H{"openidLinked": true})
+	})
+
+	rg.POST("/wechat-register", func(c *gin.Context) {
+		var req loginRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid register payload")
+			return
+		}
+		req.Name = stringsTrimSpace(req.Name)
+		req.EmployeeNo = stringsTrimSpace(req.EmployeeNo)
+		req.College = stringsTrimSpace(req.College)
+		req.Department = stringsTrimSpace(req.Department)
+		req.Phone = stringsTrimSpace(req.Phone)
+		req.Email = stringsTrimSpace(req.Email)
+		if req.Code == "" {
+			response.Fail(c, http.StatusBadRequest, "wechat code is required")
+			return
+		}
+		if req.Name == "" || req.EmployeeNo == "" || req.College == "" {
+			response.Fail(c, http.StatusBadRequest, "name, employeeNo and college are required")
+			return
+		}
+
+		openID, err := exchangeWechatOpenID(c, cfg, req.Code, req.ClientID)
+		if err != nil {
+			response.Fail(c, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		user, err := userByWechatOpenID(c, db, openID)
+		if err == nil {
+			writeLogin(c, cfg, user, gin.H{"openidLinked": true})
+			return
+		}
+		if err != sql.ErrNoRows {
+			response.Fail(c, http.StatusInternalServerError, "user query failed")
+			return
+		}
+
+		result, err := db.ExecContext(
+			c.Request.Context(),
+			`INSERT INTO teacher (name, user_id, wechat_openid, college, department, phone, email, role)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, 'teacher')`,
+			req.Name,
+			req.EmployeeNo,
+			openID,
+			req.College,
+			req.Department,
+			req.Phone,
+			req.Email,
+		)
+		if err != nil {
+			if isDuplicateEntry(err) {
+				response.Fail(c, http.StatusConflict, "employee number or wechat account already exists")
+				return
+			}
+			response.Fail(c, http.StatusInternalServerError, "teacher register failed")
+			return
+		}
+		id, _ := result.LastInsertId()
+		user, err = userByID(c, db, id)
+		if err != nil {
+			response.Fail(c, http.StatusInternalServerError, "registered user query failed")
+			return
+		}
+
+		writeLogin(c, cfg, user, gin.H{"openidLinked": true, "registered": true})
 	})
 
 	rg.POST("/cas-login", func(c *gin.Context) {
@@ -107,6 +180,43 @@ func RegisterRoutes(rg *gin.RouterGroup, cfg config.Config, db *sql.DB) {
 
 		writeLogin(c, cfg, user, gin.H{"audience": cfg.AdminTokenAudience})
 	})
+
+	rg.POST("/admin-login", func(c *gin.Context) {
+		var req loginRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid login payload")
+			return
+		}
+		req.Username = stringsTrimSpace(req.Username)
+		if req.Username == "" || req.Password == "" {
+			response.Fail(c, http.StatusBadRequest, "username and password are required")
+			return
+		}
+		if cfg.AdminLoginPassword == "" {
+			response.Fail(c, http.StatusForbidden, "admin password login is not configured")
+			return
+		}
+		if req.Password != cfg.AdminLoginPassword {
+			response.Fail(c, http.StatusUnauthorized, "invalid username or password")
+			return
+		}
+
+		user, err := userByAdminAccount(c, db, req.Username)
+		if err == sql.ErrNoRows {
+			response.Fail(c, http.StatusUnauthorized, "invalid username or password")
+			return
+		}
+		if err != nil {
+			response.Fail(c, http.StatusInternalServerError, "admin user query failed")
+			return
+		}
+		if user.Role != "party_admin" && user.Role != "school_admin" {
+			response.Fail(c, http.StatusForbidden, "admin role is required")
+			return
+		}
+
+		writeLogin(c, cfg, user, gin.H{"audience": cfg.AdminTokenAudience, "passwordLogin": true})
+	})
 }
 
 func writeLogin(c *gin.Context, cfg config.Config, user loginUser, extra gin.H) {
@@ -124,12 +234,13 @@ func writeLogin(c *gin.Context, cfg config.Config, user loginUser, extra gin.H) 
 	response.OK(c, body)
 }
 
-func exchangeWechatOpenID(c *gin.Context, cfg config.Config, code string) (string, error) {
+func exchangeWechatOpenID(c *gin.Context, cfg config.Config, code string, clientID string) (string, error) {
 	if cfg.DevAuthEnabled && (cfg.WeChatAppID == "" || cfg.WeChatAppSecret == "") {
-		if code == "dev" {
-			return "dev-wechat-openid", nil
+		clientID = stringsTrimSpace(clientID)
+		if clientID != "" {
+			return "dev-wechat-openid-" + clientID, nil
 		}
-		return code, nil
+		return "dev-wechat-openid", nil
 	}
 	if cfg.WeChatAppID == "" || cfg.WeChatAppSecret == "" {
 		return "", errors.New("wechat app is not configured")
@@ -230,8 +341,37 @@ func userByWechatOpenID(c *gin.Context, db *sql.DB, openID string) (loginUser, e
 	return queryUser(c, db, `SELECT id, name, role, user_id, college FROM teacher WHERE wechat_openid = ?`, openID)
 }
 
+func createWechatTeacher(c *gin.Context, db *sql.DB, openID string) (loginUser, error) {
+	employeeNo := "WX" + strconv.FormatInt(time.Now().UnixMilli(), 10)
+	result, err := db.ExecContext(
+		c.Request.Context(),
+		`INSERT INTO teacher (name, user_id, wechat_openid, college, department, phone, email, role)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, 'teacher')`,
+		"教师用户",
+		employeeNo,
+		openID,
+		"未填写",
+		"未填写",
+		"",
+		"",
+	)
+	if err != nil {
+		return loginUser{}, err
+	}
+	id, _ := result.LastInsertId()
+	return userByID(c, db, id)
+}
+
+func userByID(c *gin.Context, db *sql.DB, id int64) (loginUser, error) {
+	return queryUser(c, db, `SELECT id, name, role, user_id, college FROM teacher WHERE id = ?`, id)
+}
+
 func userByCASAccount(c *gin.Context, db *sql.DB, account string) (loginUser, error) {
 	return queryUser(c, db, `SELECT id, name, role, user_id, college FROM teacher WHERE cas_account = ?`, account)
+}
+
+func userByAdminAccount(c *gin.Context, db *sql.DB, account string) (loginUser, error) {
+	return queryUser(c, db, `SELECT id, name, role, user_id, college FROM teacher WHERE cas_account = ? OR user_id = ?`, account, account)
 }
 
 func firstUser(c *gin.Context, db *sql.DB, role string) (loginUser, error) {
@@ -251,6 +391,25 @@ func stringsTrimRight(value string, cutset string) string {
 		value = value[:len(value)-1]
 	}
 	return value
+}
+
+func stringsTrimSpace(value string) string {
+	for len(value) > 0 && isSpace(value[0]) {
+		value = value[1:]
+	}
+	for len(value) > 0 && isSpace(value[len(value)-1]) {
+		value = value[:len(value)-1]
+	}
+	return value
+}
+
+func isSpace(value byte) bool {
+	return value == ' ' || value == '\n' || value == '\r' || value == '\t'
+}
+
+func isDuplicateEntry(err error) bool {
+	message := err.Error()
+	return strings.Contains(message, "Duplicate entry") || strings.Contains(message, "Error 1062")
 }
 
 func containsRune(value string, target rune) bool {

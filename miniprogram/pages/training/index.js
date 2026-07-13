@@ -19,6 +19,38 @@ function applyStatusText(status) {
   return map[status] || "待审核"
 }
 
+function displayValue(value) {
+  return value || "未填写"
+}
+
+function shortTime(value) {
+  if (!value) return ""
+  return String(value).replace(/:\d{2}$/, "")
+}
+
+function timeRange(startTime, endTime) {
+  const start = shortTime(startTime)
+  const end = shortTime(endTime)
+  if (start && end) return `${start} 至 ${end}`
+  return start || end || "未填写"
+}
+
+function quotaText(value) {
+  const quota = Number(value || 0)
+  return quota > 0 ? `${quota} 人` : "不限"
+}
+
+function detailLines(training, title) {
+  return [
+    title,
+    `时间：${training.timeText || timeRange(training.startTime, training.endTime)}`,
+    `地点：${training.locationText || displayValue(training.location)}`,
+    `主办单位：${training.sponsorText || displayValue(training.sponsorUnit)}`,
+    `承办学院：${training.organizerText || displayValue(training.organizerUnit)}`,
+    `名额：${training.quotaText || quotaText(training.quota)}`
+  ]
+}
+
 Page({
   data: {
     items: [],
@@ -40,7 +72,12 @@ Page({
           ...item,
           enrolled: Boolean(item.enrolled),
           enrolledCount: Number(item.enrolledCount || 0),
-          statusText: statusText(item.statusText)
+          statusText: statusText(item.statusText),
+          timeText: timeRange(item.startTime, item.endTime),
+          locationText: displayValue(item.location),
+          sponsorText: displayValue(item.sponsorUnit),
+          organizerText: displayValue(item.organizerUnit),
+          quotaText: quotaText(item.quota)
         }))
         this.setData({ items })
       })
@@ -129,21 +166,31 @@ Page({
 
   viewLedger(event) {
     const trainingId = Number(event.currentTarget.dataset.id)
-    const title = event.currentTarget.dataset.title
+    const training = this.data.items.find(item => Number(item.id) === trainingId) || {}
+    const title = training.title || event.currentTarget.dataset.title || "培训"
     request({ url: "/trainings/ledgers", data: { page: 1, size: 50 } })
       .then(data => {
         const record = (data.list || []).find(item => Number(item.trainingId) === trainingId)
         if (!record) {
           wx.showModal({
-            title: "暂无台账",
-            content: "当前培训还没有你的报名或学习记录，请先报名。",
+            title: "培训详情",
+            content: `${detailLines(training, title).join("\n")}\n报名状态：未报名`,
             showCancel: false
           })
           return
         }
+        const detail = {
+          ...record,
+          ...training,
+          timeText: training.timeText || timeRange(record.startTime, record.endTime),
+          locationText: training.locationText || displayValue(record.location),
+          sponsorText: training.sponsorText || displayValue(record.sponsorUnit),
+          organizerText: training.organizerText || displayValue(record.organizerUnit),
+          quotaText: training.quotaText || quotaText(record.quota)
+        }
         wx.showModal({
           title: "培训台账",
-          content: `${title}\n报名状态：${applyStatusText(record.applyStatus)}\n学时：${record.learningHour || 0}\n成果状态：${applyStatusText(record.achievementStatus)}`,
+          content: `${detailLines(detail, title).join("\n")}\n报名状态：${applyStatusText(record.applyStatus)}\n成果状态：${applyStatusText(record.achievementStatus)}`,
           showCancel: false
         })
       })

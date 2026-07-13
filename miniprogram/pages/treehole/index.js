@@ -49,7 +49,9 @@ Page({
     emergencyOptions,
     anonymousType: 2,
     categoryIndex: 0,
-    emergencyIndex: 0
+    emergencyIndex: 0,
+    detailVisible: false,
+    currentDetail: {}
   },
 
   onLoad() {
@@ -181,26 +183,25 @@ Page({
   openDetail(event) {
     const item = this.data.items[Number(event.currentTarget.dataset.index)]
     if (!item) return
-    const detail = [
-      `内容：${item.content || "-"}`,
-      `类目：${item.category || "-"}`,
-      `紧急程度：${item.emergencyText || "-"}`,
-      `实名/匿名：${item.anonymousText || "-"}`,
-      `状态：${item.statusText || "-"}`,
-      item.handleContent ? `反馈：${item.handleContent}` : "反馈：暂无"
-    ].join("\n")
-
-    wx.showModal({
-      title: item.displayTitle,
-      content: detail,
-      confirmText: item.attachmentPreviewUrl ? "看附件" : "知道了",
-      cancelText: "关闭",
-      showCancel: Boolean(item.attachmentPreviewUrl),
-      success: res => {
-        if (res.confirm && item.attachmentPreviewUrl) {
-          wx.previewImage({ urls: [item.attachmentPreviewUrl] })
-        }
-      }
+    this.setData({
+      currentDetail: item,
+      detailVisible: true
     })
+  },
+
+  closeDetail() {
+    this.setData({
+      detailVisible: false,
+      currentDetail: {}
+    })
+  },
+
+  previewDetailAttachment() {
+    const url = this.data.currentDetail && this.data.currentDetail.attachmentPreviewUrl
+    if (!url) return
+    wx.previewImage({ urls: [url] })
+  },
+
+  noop() {
   }
 })

@@ -39,7 +39,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON teacher_platform.* TO 'teacher_platform_
 FLUSH PRIVILEGES;
 ```
 
-上线前需要为教师账号绑定 `teacher.wechat_openid`，为管理员账号绑定 `teacher.cas_account`。
+上线前需要为教师账号绑定 `teacher.wechat_openid`，为管理员账号绑定 `teacher.cas_account` 或可用于登录的 `teacher.user_id`。
 
 ## 3. 生产环境变量
 
@@ -60,10 +60,11 @@ CAS_SERVICE_URL=https://你的后台域名
 WECHAT_APP_ID=微信小程序 AppID
 WECHAT_APP_SECRET=微信小程序 AppSecret
 AUTH_TOKEN_SECRET=至少 32 位随机字符串
+ADMIN_LOGIN_PASSWORD=后台管理员登录密码
 DEV_AUTH_ENABLED=false
 ```
 
-`DEV_AUTH_ENABLED=false` 很重要，它会关闭本地开发 token 兼容分支。
+`DEV_AUTH_ENABLED=false` 很重要，它会关闭本地开发 token 兼容分支。生产环境必须显式配置 `ADMIN_LOGIN_PASSWORD`，不要使用本地开发默认密码。
 
 ## 4. 构建后端
 
@@ -138,6 +139,8 @@ sudo ln -s /etc/nginx/sites-available/teacher-platform.conf /etc/nginx/sites-ena
 - `ssl_certificate_key`
 - `root /opt/teacher-platform/admin/dist`
 
+模板同时代理 `/uploads/` 到后端服务，树洞附件预览依赖这个路径。
+
 检查并重载：
 
 ```bash
@@ -152,7 +155,7 @@ curl https://你的域名/healthz
 curl https://你的域名/api/v1/profile/me
 ```
 
-第二个请求需要携带登录 token；浏览器访问后台时 CAS 登录会自动获取。
+第二个请求需要携带登录 token；浏览器访问后台时使用管理员账号密码登录后会自动获取。
 
 ## 8. 日志轮转
 
@@ -173,10 +176,10 @@ API 标准输出写入 `/var/log/teacher-platform/api.log`，错误输出写入 
 request 合法域名：https://你的域名
 ```
 
-小程序端修改 `miniprogram/app.js`：
+小程序端修改 `miniprogram/config.js`：
 
 ```js
-apiBaseURL: "https://你的域名/api/v1"
+const DEFAULT_API_BASE_URL = "https://你的域名/api/v1"
 ```
 
 然后使用微信开发者工具：
@@ -193,8 +196,9 @@ apiBaseURL: "https://你的域名/api/v1"
 - systemd：`systemctl status teacher-platform-api`
 - HTTPS：证书有效，`https://你的域名/healthz` 返回 `status: up`
 - 数据库：只开放最小权限账号
-- 安全：`AUTH_TOKEN_SECRET` 已替换，`DEV_AUTH_ENABLED=false`
-- 登录：教师账号已绑定 `wechat_openid`，管理员账号已绑定 `cas_account`
+- 安全：`AUTH_TOKEN_SECRET` 和 `ADMIN_LOGIN_PASSWORD` 已替换，`DEV_AUTH_ENABLED=false`
+- 登录：教师账号已绑定 `wechat_openid`，管理员账号已绑定 `cas_account` 或 `user_id`
+- 附件：`/uploads/` 反向代理可访问，树洞图片能正常预览
 - 小程序：合法域名已配置，真机预览通过
 
 ## 11. 回滚

@@ -47,10 +47,20 @@ function buildFallbackTodos(now) {
   ]
 }
 
+function summary(text, fallback) {
+  const value = (text || "").trim()
+  if (!value) return fallback
+  return value.length > 12 ? `${value.slice(0, 12)}...` : value
+}
+
+function appealTitle(item) {
+  return summary(item.title || item.subCategory || item.content || item.description, "树洞诉求")
+}
+
 function buildTreeholeTodos(items) {
   return (items || []).slice(0, 2).map(item => ({
     title: "树洞诉求办理提醒",
-    desc: `诉求 ${item.id} ${item.statusText || appealStatusText(item.status)}`,
+    desc: `${appealTitle(item)}：${item.statusText || appealStatusText(item.status)}`,
     time: "今天",
     level: item.status === 0 || item.status === 1 ? "high" : "done"
   }))
