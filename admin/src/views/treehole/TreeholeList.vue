@@ -31,6 +31,14 @@
           :filters="statusFilters"
           :filter-method="filterStatus"
         />
+        <el-table-column label="满意度" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="satisfactionDisplay(row) !== '未评价'" :type="satisfactionTagType(row)">
+              {{ satisfactionDisplay(row) }}
+            </el-tag>
+            <span v-else>未评价</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="title" label="标题" min-width="160" show-overflow-tooltip />
         <el-table-column label="附件" width="65">
           <template #default="{ row }">
@@ -68,6 +76,10 @@
         <div class="detail-block">
           <div class="detail-label">反馈</div>
           <div class="detail-content">{{ current.handleContent || "暂无" }}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-label">满意度评价</div>
+          <div class="detail-content">{{ satisfactionDisplay(current) }}</div>
         </div>
         <div class="detail-block">
           <div class="detail-label">附件</div>
@@ -110,6 +122,7 @@ const statusFilters = [
   { text: "待受理", value: 0 },
   { text: "处理中", value: 1 },
   { text: "已反馈", value: 2 },
+  { text: "已评价", value: 3 },
   { text: "已处理", value: 4 }
 ]
 
@@ -123,6 +136,39 @@ function filterEmergency(value, row) {
 
 function filterStatus(value, row) {
   return row.status === value
+}
+
+function hasSatisfaction(row) {
+  return row && Number(row.satisfaction) >= 0
+}
+
+function satisfactionText(value) {
+  const map = {
+    0: "不满意",
+    1: "基本满意",
+    2: "满意",
+    3: "非常满意"
+  }
+  return map[value] || "未评价"
+}
+
+function satisfactionDisplay(row) {
+  if (!row) return "未评价"
+  if (hasSatisfaction(row)) return row.satisfactionText || satisfactionText(Number(row.satisfaction))
+  if (row.evaluated || row.status === 3) return "评分缺失"
+  return "未评价"
+}
+
+function satisfactionTagType(row) {
+  if (!hasSatisfaction(row)) return "warning"
+  const value = Number(row.satisfaction)
+  const map = {
+    0: "danger",
+    1: "warning",
+    2: "success",
+    3: "success"
+  }
+  return map[value] || "info"
 }
 
 function load() {

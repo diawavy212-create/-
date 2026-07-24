@@ -7,6 +7,7 @@
         <el-menu-item index="/profile">个人信息管理</el-menu-item>
         <el-menu-item index="/treeholes">教师树洞</el-menu-item>
         <el-menu-item index="/trainings">思政培训</el-menu-item>
+        <el-menu-item index="/survey">思想状况调研</el-menu-item>
       </el-menu>
     </el-aside>
 

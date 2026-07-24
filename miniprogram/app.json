@@ -3,7 +3,8 @@
     "pages/home/index",
     "pages/profile/index",
     "pages/treehole/index",
-    "pages/training/index"
+    "pages/training/index",
+    "pages/survey/index"
   ],
   "window": {
     "navigationBarTitleText": "西电教师服务",

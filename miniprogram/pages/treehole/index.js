@@ -13,6 +13,17 @@ const emergencyOptions = [
   { label: "较急", value: 1 },
   { label: "紧急", value: 2 }
 ]
+const satisfactionOptions = [
+  { label: "非常满意", value: 3 },
+  { label: "满意", value: 2 },
+  { label: "基本满意", value: 1 },
+  { label: "不满意", value: 0 }
+]
+
+function satisfactionLabel(value) {
+  const option = satisfactionOptions.find(item => item.value === Number(value))
+  return option ? option.label : ""
+}
 
 function fullURL(path) {
   if (!path) return ""
@@ -29,10 +40,28 @@ function summary(text, fallback) {
 function normalizeAppeal(item) {
   const content = item.content || item.description || ""
   const displayTitle = item.title || item.subCategory || summary(content, "未命名诉求")
+  const rawSatisfaction = item.satisfaction
+  const satisfaction = Number(rawSatisfaction)
+  const hasSatisfaction = rawSatisfaction !== undefined
+    && rawSatisfaction !== null
+    && rawSatisfaction !== ""
+    && satisfaction >= 0
+    && satisfaction <= 3
+  const status = Number(item.status)
+  const statusText = item.statusText || ""
+  const isPendingOrProcessing = status === 0
+    || status === 1
+    || statusText === "待受理"
+    || statusText === "处理中"
+  const hasHandledStatus = !Number.isNaN(status) || Boolean(statusText)
+  const canEvaluate = !hasSatisfaction && hasHandledStatus && !isPendingOrProcessing
   return {
     ...item,
     content,
     displayTitle,
+    satisfactionText: hasSatisfaction ? satisfactionLabel(satisfaction) : "未评价",
+    hasSatisfaction,
+    canEvaluate,
     attachmentPreviewUrl: fullURL(item.attachmentUrl)
   }
 }
@@ -47,11 +76,16 @@ Page({
     anonymousOptions,
     categoryOptions,
     emergencyOptions,
+    satisfactionOptions,
     anonymousType: 2,
     categoryIndex: 0,
     emergencyIndex: 0,
     detailVisible: false,
-    currentDetail: {}
+    currentDetail: {},
+    satisfactionVisible: false,
+    satisfactionValue: 3,
+    evaluatingItem: {},
+    evaluating: false
   },
 
   onLoad() {
@@ -193,6 +227,99 @@ Page({
     this.setData({
       detailVisible: false,
       currentDetail: {}
+    })
+  },
+
+  openSatisfaction(event) {
+    const item = this.data.items[Number(event.currentTarget.dataset.index)]
+    if (!item) return
+    this.setData({
+      evaluatingItem: item,
+      satisfactionValue: 3,
+      satisfactionVisible: true
+    })
+  },
+
+  openSatisfactionById(event) {
+    const id = Number(event.currentTarget.dataset.id)
+    const item = this.data.items.find(row => Number(row.id) === id)
+    if (!item) return
+    this.setData({
+      evaluatingItem: item,
+      satisfactionValue: 3,
+      satisfactionVisible: true
+    })
+  },
+
+  closeSatisfaction() {
+    if (this.data.evaluating) return
+    this.setData({
+      satisfactionVisible: false,
+      evaluatingItem: {}
+    })
+  },
+
+  selectSatisfaction(event) {
+    this.setData({ satisfactionValue: Number(event.detail.value) })
+  },
+
+  submitSatisfactionValue(event) {
+    const id = Number(event.currentTarget.dataset.id)
+    const value = Number(event.currentTarget.dataset.value)
+    const item = this.data.items.find(row => Number(row.id) === id)
+    if (!item || !item.id || this.data.evaluating) return
+    this.saveSatisfaction(item, value)
+  },
+
+  submitSatisfaction() {
+    const item = this.data.evaluatingItem
+    if (!item || !item.id || this.data.evaluating) return
+    const satisfaction = Number(this.data.satisfactionValue)
+    this.saveSatisfaction(item, satisfaction)
+  },
+
+  saveSatisfaction(item, satisfaction) {
+    if (!satisfactionLabel(satisfaction)) {
+      wx.showToast({ title: "请选择满意度", icon: "none" })
+      return
+    }
+
+    this.setData({ evaluating: true })
+    request({
+      url: `/treeholes/${item.id}/satisfaction`,
+      method: "POST",
+      data: {
+        satisfaction,
+        satisfactionScore: satisfaction,
+        score: satisfaction,
+        remark: ""
+      }
+    }).then(data => {
+      const saved = Number(data && data.satisfaction)
+      if (saved !== satisfaction) {
+        throw new Error("评分未保存，请重启后端后重试")
+      }
+      const index = this.data.items.findIndex(row => Number(row.id) === Number(item.id))
+      if (index >= 0) {
+        this.setData({
+          [`items[${index}].status`]: 3,
+          [`items[${index}].statusText`]: "已评价",
+          [`items[${index}].satisfaction`]: saved,
+          [`items[${index}].satisfactionText`]: satisfactionLabel(saved),
+          [`items[${index}].hasSatisfaction`]: true,
+          [`items[${index}].canEvaluate`]: false,
+          [`dismissedEvaluationIds.${item.id}`]: false
+        })
+      }
+      wx.showToast({ title: satisfactionLabel(satisfaction) })
+      this.setData({
+        satisfactionVisible: false,
+        evaluatingItem: {}
+      })
+    }).catch(err => {
+      wx.showToast({ title: err.message || "评价失败", icon: "none" })
+    }).finally(() => {
+      this.setData({ evaluating: false })
     })
   },
 

@@ -9,6 +9,11 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS training_record;
 DROP TABLE IF EXISTS training;
+DROP TABLE IF EXISTS survey_answer;
+DROP TABLE IF EXISTS survey_response;
+DROP TABLE IF EXISTS survey_option;
+DROP TABLE IF EXISTS survey_question;
+DROP TABLE IF EXISTS survey;
 DROP TABLE IF EXISTS appeal;
 DROP TABLE IF EXISTS teacher;
 
@@ -110,6 +115,96 @@ CREATE TABLE training_record (
     ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Training enrollment and learning record';
 
+CREATE TABLE survey (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Survey id',
+  title VARCHAR(100) NOT NULL COMMENT 'Survey title',
+  type TINYINT NOT NULL DEFAULT 0 COMMENT '0 regular short survey, 1 annual long survey',
+  scope VARCHAR(50) NOT NULL DEFAULT '全校' COMMENT 'Delivery scope: school, college, or group',
+  college VARCHAR(50) NULL COMMENT 'Target college; empty for school scope',
+  survey_group VARCHAR(50) NULL COMMENT 'Target teacher group',
+  start_time DATETIME NULL COMMENT 'Start time',
+  end_time DATETIME NULL COMMENT 'End time',
+  status TINYINT NOT NULL DEFAULT 0 COMMENT '0 unpublished, 1 in progress, 2 ended',
+  create_by BIGINT NULL COMMENT 'Creator id',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_survey_status (status),
+  KEY idx_survey_scope (scope, college, survey_group),
+  KEY idx_survey_time (start_time, end_time),
+  KEY idx_survey_create_by (create_by),
+  CONSTRAINT fk_survey_create_by FOREIGN KEY (create_by) REFERENCES teacher (id)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Ideological status survey';
+
+CREATE TABLE survey_question (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Question id',
+  survey_id BIGINT NOT NULL COMMENT 'Related survey id',
+  title VARCHAR(255) NOT NULL COMMENT 'Question title',
+  question_type VARCHAR(20) NOT NULL DEFAULT 'single' COMMENT 'single or text',
+  required TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether required',
+  sort_order INT NOT NULL DEFAULT 0 COMMENT 'Sort order',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_survey_question_survey_id (survey_id),
+  CONSTRAINT fk_survey_question_survey FOREIGN KEY (survey_id) REFERENCES survey (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Survey question bank';
+
+CREATE TABLE survey_option (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Option id',
+  question_id BIGINT NOT NULL COMMENT 'Related question id',
+  label VARCHAR(100) NOT NULL COMMENT 'Option label',
+  score INT NOT NULL DEFAULT 0 COMMENT 'Risk score or analysis score',
+  sort_order INT NOT NULL DEFAULT 0 COMMENT 'Sort order',
+  PRIMARY KEY (id),
+  KEY idx_survey_option_question_id (question_id),
+  CONSTRAINT fk_survey_option_question FOREIGN KEY (question_id) REFERENCES survey_question (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Survey question option';
+
+CREATE TABLE survey_response (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Survey response id',
+  survey_id BIGINT NOT NULL COMMENT 'Related survey id',
+  teacher_id BIGINT NOT NULL COMMENT 'Related teacher id',
+  duration_seconds INT NOT NULL DEFAULT 0 COMMENT 'Completion duration in seconds',
+  is_valid TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Quality control result',
+  submit_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_survey_response_teacher (survey_id, teacher_id),
+  KEY idx_survey_response_survey_id (survey_id),
+  KEY idx_survey_response_teacher_id (teacher_id),
+  KEY idx_survey_response_valid (is_valid),
+  CONSTRAINT fk_survey_response_survey FOREIGN KEY (survey_id) REFERENCES survey (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_survey_response_teacher FOREIGN KEY (teacher_id) REFERENCES teacher (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Survey completion record and quality status';
+
+CREATE TABLE survey_answer (
+  id BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Survey answer id',
+  response_id BIGINT NOT NULL COMMENT 'Related response id',
+  survey_id BIGINT NOT NULL COMMENT 'Related survey id',
+  question_id BIGINT NOT NULL COMMENT 'Related question id',
+  option_id BIGINT NULL COMMENT 'Selected option id',
+  content TEXT NULL COMMENT 'Open answer content',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_survey_answer_response_id (response_id),
+  KEY idx_survey_answer_survey_id (survey_id),
+  KEY idx_survey_answer_question_id (question_id),
+  KEY idx_survey_answer_option_id (option_id),
+  CONSTRAINT fk_survey_answer_response FOREIGN KEY (response_id) REFERENCES survey_response (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_survey_answer_survey FOREIGN KEY (survey_id) REFERENCES survey (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_survey_answer_question FOREIGN KEY (question_id) REFERENCES survey_question (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_survey_answer_option FOREIGN KEY (option_id) REFERENCES survey_option (id)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Survey answer detail';
+
 INSERT INTO teacher (id, user_id, wechat_openid, cas_account, name, college, department, phone, email, role)
 VALUES
   (1, 'T20260001', 'dev-wechat-openid', NULL, 'Teacher User', 'College', 'Department', '138****0001', 'teacher@example.edu.cn', 'teacher'),
@@ -143,3 +238,24 @@ INSERT INTO appeal (
 VALUES
   (1, 0, 'Teaching Support', 'Facilities', 2, 1, 'Please improve evening lighting and maintenance response.', 1, '138****0001', 0),
   (NULL, 1, 'Mental Support', 'Anonymous Feedback', 1, 0, 'Please add mental support and anonymous feedback channels for teachers.', 0, NULL, 0);
+
+INSERT INTO survey (
+  id, title, type, scope, college, survey_group, start_time, end_time, status, create_by
+)
+VALUES
+  (1, '2026年教师思想状况常态短测', 0, '全校', NULL, '青年教师', '2026-07-01 09:00:00', '2026-07-31 18:00:00', 1, 3);
+
+INSERT INTO survey_question (id, survey_id, title, question_type, required, sort_order)
+VALUES
+  (1, 1, '近期工作压力感受', 'single', 1, 1),
+  (2, 1, '对学院支持保障的满意度', 'single', 1, 2),
+  (3, 1, '希望学校重点改进的问题', 'text', 0, 3);
+
+INSERT INTO survey_option (id, question_id, label, score, sort_order)
+VALUES
+  (1, 1, '较轻', 1, 1),
+  (2, 1, '适中', 2, 2),
+  (3, 1, '压力较大', 3, 3),
+  (4, 2, '满意', 1, 1),
+  (5, 2, '基本满意', 2, 2),
+  (6, 2, '不满意', 3, 3);

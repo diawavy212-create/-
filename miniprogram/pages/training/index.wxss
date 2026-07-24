@@ -40,9 +40,17 @@
 
 .small {
   flex: 1;
-  height: 70rpx;
-  line-height: 70rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+  border-radius: 16rpx;
   font-size: 26rpx;
+  font-weight: 700;
 }
 
 .cancel-button {
@@ -59,12 +67,158 @@
   margin: 0;
   text-align: center;
   color: #c51624;
-  background: transparent;
+  background: #ffffff;
   border: 1rpx solid #c51624;
   border-radius: 16rpx;
   font-size: 26rpx;
+  font-weight: 700;
 }
 
+.small::after,
 .outline::after {
   border: 0;
+}
+
+.trace-button {
+  width: 100%;
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0;
+  margin: 18rpx 0 0;
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.trace-button::after,
+.upload-button::after {
+  border: 0;
+}
+
+.trace-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  background: rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+
+.trace-panel {
+  width: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 20rpx;
+}
+
+.trace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 30rpx 34rpx 20rpx;
+  border-bottom: 1rpx solid #edf0f4;
+}
+
+.trace-title {
+  flex: 1;
+  color: #09213a;
+  font-size: 32rpx;
+  font-weight: 900;
+  line-height: 44rpx;
+}
+
+.trace-close {
+  width: 48rpx;
+  height: 48rpx;
+  line-height: 44rpx;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 42rpx;
+}
+
+.trace-body {
+  padding: 28rpx 34rpx 34rpx;
+}
+
+.trace-training {
+  margin-bottom: 18rpx;
+  color: #09213a;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 42rpx;
+  word-break: break-all;
+}
+
+.trace-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #edf0f4;
+  color: #213247;
+  font-size: 26rpx;
+  line-height: 38rpx;
+}
+
+.trace-row text,
+.input-label {
+  color: #697789;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.input-label {
+  margin: 22rpx 0 10rpx;
+}
+
+.trace-input {
+  width: 100%;
+  height: 76rpx;
+  box-sizing: border-box;
+  padding: 0 20rpx;
+  color: #09213a;
+  background: #f8fafc;
+  border: 1rpx solid #d8dee8;
+  border-radius: 14rpx;
+  font-size: 26rpx;
+}
+
+.upload-button {
+  width: 100%;
+  height: 76rpx;
+  line-height: 76rpx;
+  padding: 0 20rpx;
+  margin: 18rpx 0 0;
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+  border-radius: 14rpx;
+  font-size: 26rpx;
+}
+
+.trace-link {
+  margin-top: 12rpx;
+  color: #697789;
+  font-size: 22rpx;
+  line-height: 34rpx;
+  word-break: break-all;
+}
+
+.trace-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 26rpx;
+}
+
+.trace-actions button {
+  flex: 1;
+  margin: 0;
 }

@@ -1,0 +1,137 @@
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.link-button {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 18rpx;
+  margin: 0;
+  color: #c51624;
+  background: transparent;
+  border: 1rpx solid #c51624;
+  border-radius: 14rpx;
+  font-size: 24rpx;
+}
+
+.link-button::after {
+  border: 0;
+}
+
+.survey-card {
+  padding: 24rpx 0;
+  border-top: 1rpx solid #dde1e6;
+}
+
+.survey-card:first-of-type {
+  border-top: 0;
+}
+
+.survey-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.title,
+.form-title {
+  flex: 1;
+  margin-bottom: 10rpx;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 42rpx;
+}
+
+.status {
+  flex: none;
+  padding: 6rpx 14rpx;
+  color: #c51624;
+  background: #fff1f2;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.status.done {
+  color: #667085;
+  background: #eef2f6;
+}
+
+.survey-info {
+  margin-top: 8rpx;
+  color: #2f3a4a;
+  font-size: 26rpx;
+  line-height: 38rpx;
+}
+
+.empty {
+  padding: 60rpx 0;
+  text-align: center;
+  color: #8c98a6;
+  font-size: 28rpx;
+}
+
+.question-block {
+  padding: 28rpx 0;
+  border-top: 1rpx solid #e5e7eb;
+}
+
+.question-title {
+  margin-bottom: 18rpx;
+  color: #111827;
+  font-size: 28rpx;
+  font-weight: 800;
+  line-height: 42rpx;
+}
+
+.required {
+  color: #c51624;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  min-height: 58rpx;
+  color: #2f3a4a;
+  font-size: 27rpx;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 180rpx;
+  box-sizing: border-box;
+  padding: 18rpx;
+  background: #f8fafc;
+  border: 1rpx solid #d8dee8;
+  border-radius: 16rpx;
+  font-size: 27rpx;
+  line-height: 40rpx;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 22rpx;
+}
+
+.actions button {
+  flex: 1;
+}
+
+.outline {
+  height: 82rpx;
+  line-height: 82rpx;
+  padding: 0;
+  margin: 0;
+  color: #c51624;
+  background: #ffffff;
+  border: 1rpx solid #c51624;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+}
+
+.outline::after {
+  border: 0;
+}

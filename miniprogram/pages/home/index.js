@@ -42,7 +42,7 @@ function buildFallbackTodos(now) {
   const month = now.getMonth() + 1
   return [
     { title: "树洞诉求办理提醒", desc: "你的树洞诉求正在办理中", time: "今天", level: "high" },
-    { title: "校级思政培训报名", desc: `${month}月培训已开放报名`, time: formatDate(now), level: "normal" },
+    { title: "思想状况调研填写提醒", desc: `${month}月调研问卷已开放填写`, time: formatDate(now), level: "normal" },
     { title: "培训学习台账更新", desc: "报名审核和学习记录可查看", time: formatDate(now), level: "done" }
   ]
 }
@@ -58,7 +58,7 @@ function appealTitle(item) {
 }
 
 function buildTreeholeTodos(items) {
-  return (items || []).slice(0, 2).map(item => ({
+  return (items || []).slice(0, 1).map(item => ({
     title: "树洞诉求办理提醒",
     desc: `${appealTitle(item)}：${item.statusText || appealStatusText(item.status)}`,
     time: "今天",
@@ -91,15 +91,26 @@ function buildTrainingTodos(trainings, ledgers, now) {
   return todos
 }
 
-function buildStats(treeholes, trainings) {
+function buildSurveyTodos(surveys, now) {
+  return (surveys || []).filter(item => !item.submitted).slice(0, 1).map(item => ({
+    title: "思想状况调研填写提醒",
+    desc: `${item.title} 待填写`,
+    time: formatDate(now),
+    level: "high"
+  }))
+}
+
+function buildStats(treeholes, trainings, surveys) {
   const appeals = treeholes || []
   const openTrainings = trainings || []
+  const openSurveys = surveys || []
   const feedbackCount = appeals.filter(item => item.status === 2 || item.handleContent).length
   const followCount = appeals.filter(item => item.status === 0 || item.status === 1).length
   return [
     { value: feedbackCount, label: "树洞反馈" },
     { value: followCount, label: "待跟进" },
-    { value: openTrainings.length, label: "开放培训" }
+    { value: openTrainings.length, label: "开放培训" },
+    { value: openSurveys.filter(item => !item.submitted).length, label: "待填调研" }
   ]
 }
 
@@ -110,14 +121,16 @@ Page({
     avatarUrl: "",
     todos: [],
     features: [
-      { title: "个人信息管理", icon: "人", color: "gold", path: "/pages/profile/index" },
-      { title: "教师树洞", icon: "诉", color: "red", path: "/pages/treehole/index" },
-      { title: "思政培训活动", icon: "学", color: "dark-red", path: "/pages/training/index" }
+      { title: "个人信息管理", icon: "人", color: "gold", path: "/pages/profile/index", tab: true },
+      { title: "教师树洞", icon: "诉", color: "red", path: "/pages/treehole/index", tab: true },
+      { title: "思政培训活动", icon: "学", color: "dark-red", path: "/pages/training/index", tab: true },
+      { title: "思想状况调研", icon: "调", color: "gold", path: "/pages/survey/index", tab: false }
     ],
     stats: [
       { value: 0, label: "树洞反馈" },
       { value: 0, label: "待跟进" },
-      { value: 0, label: "开放培训" }
+      { value: 0, label: "开放培训" },
+      { value: 0, label: "待填调研" }
     ]
   },
 
@@ -149,13 +162,15 @@ Page({
     Promise.all([
       request({ url: "/treeholes", data: { page: 1, size: 20 } }).catch(() => ({ list: [] })),
       request({ url: "/trainings", data: { page: 1, size: 20, status: 1 } }).catch(() => ({ list: [] })),
-      request({ url: "/trainings/ledgers", data: { page: 1, size: 20 } }).catch(() => ({ list: [] }))
-    ]).then(([treeholes, trainings, ledgers]) => {
+      request({ url: "/trainings/ledgers", data: { page: 1, size: 20 } }).catch(() => ({ list: [] })),
+      request({ url: "/survey/list", data: { page: 1, size: 20, status: 1 } }).catch(() => ({ list: [] }))
+    ]).then(([treeholes, trainings, ledgers, surveys]) => {
       const todos = [
+        ...buildSurveyTodos(surveys.list, now),
         ...buildTreeholeTodos(treeholes.list),
         ...buildTrainingTodos(trainings.list, ledgers.list, now)
       ].slice(0, 3)
-      const stats = buildStats(treeholes.list, trainings.list)
+      const stats = buildStats(treeholes.list, trainings.list, surveys.list)
 
       if (todos.length > 0) {
         this.setData({ todos })
@@ -188,8 +203,12 @@ Page({
 
   openFeature(event) {
     const path = event.currentTarget.dataset.path
-    if (path) {
+    const feature = this.data.features.find(item => item.path === path)
+    if (!path) return
+    if (feature && feature.tab) {
       wx.switchTab({ url: path })
+      return
     }
+    wx.navigateTo({ url: path })
   }
 })

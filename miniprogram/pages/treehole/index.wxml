@@ -34,17 +34,28 @@
   <view class="card">
     <view class="section-title">办理进度</view>
     <block wx:if="{{items.length}}">
-      <block wx:for="{{items}}" wx:key="id">
-        <view class="appeal pressable" data-index="{{index}}" bindtap="openDetail">
-          <view class="appeal-title">{{item.displayTitle}}</view>
-          <view class="appeal-meta">
-            <text>{{item.anonymousText}}</text>
-            <text>{{item.category}}</text>
-            <text>{{item.emergencyText}}</text>
+      <block wx:for="{{items}}" wx:for-item="appeal" wx:for-index="appealIndex" wx:key="id">
+        <view class="appeal pressable" data-index="{{appealIndex}}" bindtap="openDetail">
+          <view class="appeal-head">
+            <view class="appeal-title">{{appeal.displayTitle}}</view>
           </view>
-          <view class="muted">状态：{{item.statusText}}</view>
-          <view wx:if="{{item.handleContent}}" class="feedback-preview">反馈：{{item.handleContent}}</view>
-          <view wx:if="{{item.attachmentPreviewUrl}}" class="muted">附件：点击查看详情后预览</view>
+          <view class="appeal-meta">
+            <text>{{appeal.anonymousText}}</text>
+            <text>{{appeal.category}}</text>
+            <text>{{appeal.emergencyText}}</text>
+          </view>
+          <view class="status-line">
+            <view class="muted">状态：{{appeal.statusText}}</view>
+            <view
+              wx:if="{{appeal.canEvaluate}}"
+              class="evaluate-arrow"
+              data-id="{{appeal.id}}"
+              catchtap="openSatisfactionById"
+            >去评价 ›</view>
+          </view>
+          <view wx:if="{{appeal.handleContent}}" class="feedback-preview">反馈：{{appeal.handleContent}}</view>
+          <view wx:if="{{appeal.hasSatisfaction}}" class="satisfaction-result">满意度：{{appeal.satisfactionText}}</view>
+          <view wx:if="{{appeal.attachmentPreviewUrl}}" class="muted">附件：点击查看详情后预览</view>
         </view>
       </block>
     </block>
@@ -89,6 +100,29 @@
           <image class="detail-image" src="{{currentDetail.attachmentPreviewUrl}}" mode="aspectFill" bindtap="previewDetailAttachment"></image>
         </view>
       </scroll-view>
+    </view>
+  </view>
+
+  <view wx:if="{{satisfactionVisible}}" class="detail-mask" bindtap="closeSatisfaction">
+    <view class="satisfaction-panel" catchtap="noop">
+      <view class="detail-header">
+        <view class="detail-title">满意度评价（教师）</view>
+        <view class="detail-close" bindtap="closeSatisfaction">×</view>
+      </view>
+      <view class="satisfaction-body">
+        <view class="satisfaction-target">{{evaluatingItem.displayTitle}}</view>
+        <view class="muted">请选择本次树洞诉求办理结果的满意程度</view>
+        <radio-group class="satisfaction-options" bindchange="selectSatisfaction">
+          <label class="satisfaction-option" wx:for="{{satisfactionOptions}}" wx:key="value">
+            <radio value="{{item.value}}" checked="{{satisfactionValue == item.value}}" color="#c51624" />
+            <text>{{item.label}}</text>
+          </label>
+        </radio-group>
+        <view class="satisfaction-actions">
+          <button class="outline-button" bindtap="closeSatisfaction">取消</button>
+          <button class="primary-button" loading="{{evaluating}}" bindtap="submitSatisfaction">提交评价</button>
+        </view>
+      </view>
     </view>
   </view>
 </view>

@@ -28,11 +28,6 @@ type submitRequest struct {
 	Content        string `json:"content"`
 }
 
-type evaluateRequest struct {
-	Satisfaction int    `json:"satisfaction"`
-	Remark       string `json:"remark"`
-}
-
 type assignRequest struct {
 	HandlerUnit string `json:"handlerUnit"`
 	HandlerID   int64  `json:"handlerId"`
@@ -159,7 +154,8 @@ func list(db *sql.DB) gin.HandlerFunc {
 			c.Request.Context(),
 			`SELECT a.id, COALESCE(t.name, 'anonymous'), COALESCE(t.college, ''), a.category,
 			 COALESCE(a.sub_category, ''), a.description, a.status, COALESCE(a.handle_content, ''),
-			 COALESCE(a.attachment_url, ''), a.anonymous_type, a.emergency_level, a.influence_scope
+			 COALESCE(a.attachment_url, ''), a.anonymous_type, a.emergency_level, a.influence_scope,
+			 COALESCE(a.satisfaction, -1)
 			 FROM appeal a
 			 LEFT JOIN teacher t ON t.id = a.teacher_id `+where+`
 			 ORDER BY a.create_time DESC
@@ -178,7 +174,7 @@ func list(db *sql.DB) gin.HandlerFunc {
 			if err := rows.Scan(
 				&item.ID, &item.TeacherName, &item.College, &item.Category, &item.SubCategory,
 				&item.Description, &item.Status, &item.HandleContent, &item.AttachmentURL,
-				&item.AnonymousType, &item.EmergencyLevel, &item.InfluenceScope,
+				&item.AnonymousType, &item.EmergencyLevel, &item.InfluenceScope, &item.Satisfaction,
 			); err != nil {
 				response.Fail(c, http.StatusInternalServerError, "treehole scan failed")
 				return
@@ -296,25 +292,69 @@ func removeAttachmentFile(url string) {
 
 func evaluate(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req evaluateRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
+		var payload map[string]any
+		if err := c.ShouldBindJSON(&payload); err != nil {
 			response.Fail(c, http.StatusBadRequest, "invalid satisfaction payload")
 			return
 		}
-		if req.Satisfaction < 0 || req.Satisfaction > 3 {
+		satisfaction, ok := parseSatisfaction(payload)
+		if !ok {
+			response.Fail(c, http.StatusBadRequest, "satisfaction is required")
+			return
+		}
+		if satisfaction < 0 || satisfaction > 3 {
 			response.Fail(c, http.StatusBadRequest, "satisfaction must be 0-3")
 			return
 		}
-		if _, err := db.ExecContext(
+		appealID := pathID(c)
+		_, err := db.ExecContext(
 			c.Request.Context(),
 			`UPDATE appeal SET satisfaction = ?, status = 3 WHERE id = ?`,
-			req.Satisfaction, pathID(c),
-		); err != nil {
+			satisfaction, appealID,
+		)
+		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "treehole satisfaction failed")
 			return
 		}
-		response.OK(c, gin.H{"id": pathID(c), "evaluated": true})
+
+		var saved int
+		if err := db.QueryRowContext(c.Request.Context(), `SELECT COALESCE(satisfaction, -1) FROM appeal WHERE id = ?`, appealID).Scan(&saved); err != nil {
+			response.Fail(c, http.StatusNotFound, "treehole not found")
+			return
+		}
+		if saved < 0 || saved > 3 {
+			response.Fail(c, http.StatusInternalServerError, "treehole satisfaction was not saved")
+			return
+		}
+		response.OK(c, gin.H{
+			"id":               appealID,
+			"evaluated":        true,
+			"satisfaction":     saved,
+			"satisfactionText": satisfactionText(saved),
+		})
 	}
+}
+
+func parseSatisfaction(payload map[string]any) (int, bool) {
+	keys := []string{"satisfaction", "satisfactionScore", "score", "rating"}
+	for _, key := range keys {
+		value, exists := payload[key]
+		if !exists {
+			continue
+		}
+		switch typed := value.(type) {
+		case float64:
+			return int(typed), true
+		case int:
+			return typed, true
+		case string:
+			parsed, err := strconv.Atoi(strings.TrimSpace(typed))
+			if err == nil {
+				return parsed, true
+			}
+		}
+	}
+	return 0, false
 }
 
 func statistics(db *sql.DB) gin.HandlerFunc {
@@ -364,6 +404,7 @@ type treeholeItem struct {
 	AnonymousType  int
 	EmergencyLevel int
 	InfluenceScope int
+	Satisfaction   int
 }
 
 func (i treeholeItem) toJSON() gin.H {
@@ -379,23 +420,26 @@ func (i treeholeItem) toJSON() gin.H {
 		}
 	}
 	return gin.H{
-		"id":             i.ID,
-		"title":          title,
-		"teacherName":    teacherName,
-		"college":        i.College,
-		"category":       i.Category,
-		"subCategory":    i.SubCategory,
-		"description":    i.Description,
-		"content":        i.Description,
-		"status":         i.Status,
-		"statusText":     statusText(i.Status),
-		"handleContent":  i.HandleContent,
-		"attachmentUrl":  i.AttachmentURL,
-		"anonymousType":  i.AnonymousType,
-		"anonymousText":  anonymousText(i.AnonymousType),
-		"emergencyLevel": i.EmergencyLevel,
-		"emergencyText":  emergencyText(i.EmergencyLevel),
-		"influenceScope": i.InfluenceScope,
+		"id":               i.ID,
+		"title":            title,
+		"teacherName":      teacherName,
+		"college":          i.College,
+		"category":         i.Category,
+		"subCategory":      i.SubCategory,
+		"description":      i.Description,
+		"content":          i.Description,
+		"status":           i.Status,
+		"statusText":       statusText(i.Status),
+		"handleContent":    i.HandleContent,
+		"attachmentUrl":    i.AttachmentURL,
+		"anonymousType":    i.AnonymousType,
+		"anonymousText":    anonymousText(i.AnonymousType),
+		"emergencyLevel":   i.EmergencyLevel,
+		"emergencyText":    emergencyText(i.EmergencyLevel),
+		"influenceScope":   i.InfluenceScope,
+		"evaluated":        i.Status == 3,
+		"satisfaction":     i.Satisfaction,
+		"satisfactionText": satisfactionText(i.Satisfaction),
 	}
 }
 
@@ -471,6 +515,21 @@ func emergencyText(value int) string {
 		return "紧急"
 	default:
 		return "未知"
+	}
+}
+
+func satisfactionText(value int) string {
+	switch value {
+	case 0:
+		return "不满意"
+	case 1:
+		return "基本满意"
+	case 2:
+		return "满意"
+	case 3:
+		return "非常满意"
+	default:
+		return "未评价"
 	}
 }
 

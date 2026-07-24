@@ -1,4 +1,5 @@
 const { request } = require("../../utils/request")
+const app = getApp()
 
 function statusText(status) {
   const map = {
@@ -51,10 +52,24 @@ function detailLines(training, title) {
   ]
 }
 
+function fullURL(path) {
+  if (!path) return ""
+  if (/^https?:\/\//.test(path)) return path
+  return app.globalData.apiBaseURL.replace(/\/api\/v1$/, "") + path
+}
+
 Page({
   data: {
     items: [],
-    enrollingId: 0
+    enrollingId: 0,
+    traceVisible: false,
+    traceItem: {},
+    traceRecord: {},
+    achievementUrl: "",
+    achievementFileName: "",
+    studyHours: "",
+    tracing: false,
+    uploading: false
   },
 
   onLoad() {
@@ -197,5 +212,156 @@ Page({
       .catch(() => {
         wx.showToast({ title: "台账加载失败", icon: "none" })
       })
+  },
+
+  openTrace(event) {
+    const trainingId = Number(event.currentTarget.dataset.id)
+    const training = this.data.items.find(item => Number(item.id) === trainingId)
+    if (!training) return
+    if (!training.enrolled) {
+      wx.showToast({ title: "请先报名培训", icon: "none" })
+      return
+    }
+    this.setData({
+      traceVisible: true,
+      traceItem: training,
+      traceRecord: {},
+      achievementUrl: "",
+      achievementFileName: "",
+      studyHours: "",
+      tracing: true
+    })
+    this.loadTraceRecord(trainingId)
+  },
+
+  loadTraceRecord(trainingId) {
+    request({ url: "/trainings/ledgers", data: { page: 1, size: 50 } })
+      .then(data => {
+        const record = (data.list || []).find(item => Number(item.trainingId) === trainingId) || {}
+        this.setData({
+          traceRecord: {
+            ...record,
+            achievementPreviewUrl: fullURL(record.achievementUrl)
+          },
+          achievementUrl: record.achievementUrl || "",
+          achievementFileName: record.achievementUrl ? "已上传成果文件" : "",
+          studyHours: record.learningHour ? String(record.learningHour) : ""
+        })
+      })
+      .catch(() => {
+        wx.showToast({ title: "留痕记录加载失败", icon: "none" })
+      })
+      .finally(() => {
+        this.setData({ tracing: false })
+      })
+  },
+
+  closeTrace() {
+    if (this.data.tracing || this.data.uploading) return
+    this.setData({
+      traceVisible: false,
+      traceItem: {},
+      traceRecord: {},
+      achievementUrl: "",
+      achievementFileName: "",
+      studyHours: ""
+    })
+  },
+
+  onStudyHoursInput(event) {
+    this.setData({ studyHours: event.detail.value })
+  },
+
+  onAchievementUrlInput(event) {
+    this.setData({
+      achievementUrl: event.detail.value,
+      achievementFileName: event.detail.value ? "外部成果链接" : ""
+    })
+  },
+
+  chooseAchievement() {
+    if (this.data.uploading) return
+    wx.chooseMessageFile({
+      count: 1,
+      type: "file",
+      success: res => {
+        const file = res.tempFiles && res.tempFiles[0]
+        if (!file || !file.path) return
+        this.uploadAchievement(file.path, file.name || "成果文件")
+      }
+    })
+  },
+
+  uploadAchievement(filePath, fileName) {
+    this.setData({ uploading: true })
+    app.ensureLogin().then(token => {
+      wx.uploadFile({
+        url: `${app.globalData.apiBaseURL}/trainings/learning-records/uploads`,
+        filePath,
+        name: "file",
+        header: { Authorization: `Bearer ${token}` },
+        success: res => {
+          let body = {}
+          try {
+            body = JSON.parse(res.data || "{}")
+          } catch (error) {
+            wx.showToast({ title: "成果上传失败", icon: "none" })
+            return
+          }
+          if (res.statusCode >= 200 && res.statusCode < 300 && (body.code === 200 || body.code === 0)) {
+            this.setData({
+              achievementUrl: body.data.url,
+              achievementFileName: body.data.name || fileName
+            })
+            wx.showToast({ title: "成果已上传" })
+            return
+          }
+          wx.showToast({ title: body.msg || body.message || "成果上传失败", icon: "none" })
+        },
+        fail: () => wx.showToast({ title: "成果上传失败", icon: "none" }),
+        complete: () => this.setData({ uploading: false })
+      })
+    }).catch(() => {
+      this.setData({ uploading: false })
+    })
+  },
+
+  submitTrace() {
+    const trainingId = this.data.traceItem && this.data.traceItem.id
+    if (!trainingId || this.data.tracing) return
+    const studyHours = Number(this.data.studyHours || 0)
+    if (this.data.studyHours && (Number.isNaN(studyHours) || studyHours < 0)) {
+      wx.showToast({ title: "请输入正确学时", icon: "none" })
+      return
+    }
+
+    this.setData({ tracing: true })
+    request({
+      url: `/trainings/${trainingId}/learning-records`,
+      method: "POST",
+      data: {
+        signIn: true,
+        studyHours,
+        achievementUrl: this.data.achievementUrl
+      }
+    }).then(() => {
+      wx.showToast({ title: "留痕已提交" })
+      this.setData({
+        traceVisible: false,
+        traceItem: {},
+        traceRecord: {},
+        achievementUrl: "",
+        achievementFileName: "",
+        studyHours: ""
+      })
+      return this.loadTrainings()
+    }).catch(err => {
+      wx.showToast({ title: err.message || "留痕提交失败", icon: "none" })
+    }).finally(() => {
+      this.setData({ tracing: false })
+    })
+  },
+
+  noop() {
   }
 })

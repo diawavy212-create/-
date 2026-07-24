@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="card">
+    <view class="section-title">
+      <text>思想状况调研</text>
+      <button class="link-button" bindtap="viewRecords">我的记录</button>
+    </view>
+
+    <block wx:if="{{!current}}">
+      <block wx:for="{{items}}" wx:key="id">
+        <view class="survey-card pressable" bindtap="openSurvey" data-id="{{item.id}}">
+          <view class="survey-head">
+            <view class="title">{{item.title}}</view>
+            <view class="status {{item.submitted ? 'done' : ''}}">{{item.submittedText}}</view>
+          </view>
+          <view class="muted">{{item.typeText}} · {{item.scope}} · {{item.questionCount}}题</view>
+          <view class="survey-info">周期：{{item.timeText}}</view>
+          <view class="survey-info">范围：{{item.college || "全校"}} {{item.group || ""}}</view>
+        </view>
+      </block>
+      <view wx:if="{{!items.length}}" class="empty">暂无进行中的调研</view>
+    </block>
+
+    <block wx:else>
+      <view class="form-title">{{current.title}}</view>
+      <view class="muted">{{current.typeText}} · {{current.timeText}}</view>
+
+      <block wx:for="{{current.questions}}" wx:key="id">
+        <view class="question-block">
+          <view class="question-title">
+            {{index + 1}}. {{item.title}}
+            <text wx:if="{{item.required}}" class="required">*</text>
+          </view>
+          <radio-group wx:if="{{item.type !== 'text'}}" data-question-id="{{item.id}}" bindchange="chooseOption">
+            <label class="option-row" wx:for="{{item.options}}" wx:for-item="option" wx:key="id">
+              <radio value="{{option.id}}" checked="{{answerMap[item.id] == option.id}}" color="#c51624" />
+              <text>{{option.label}}</text>
+            </label>
+          </radio-group>
+          <textarea
+            wx:else
+            class="textarea"
+            data-question-id="{{item.id}}"
+            value="{{answerMap[item.id]}}"
+            placeholder="请输入你的想法或建议"
+            bindinput="inputText"
+          />
+        </view>
+      </block>
+
+      <view class="actions">
+        <button class="outline" bindtap="closeSurvey">返回列表</button>
+        <button class="primary-button" loading="{{submitting}}" bindtap="submitSurvey">提交问卷</button>
+      </view>
+    </block>
+  </view>
+</view>

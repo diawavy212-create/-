@@ -20,9 +20,47 @@
             disabled="{{enrollingId && enrollingId != item.id}}"
             bindtap="toggleEnroll"
           >{{item.enrolled ? "取消报名" : "报名"}}</button>
-          <button class="outline" data-id="{{item.id}}" data-title="{{item.title}}" bindtap="viewLedger">查看台账</button>
+          <button class="outline ledger-button" data-id="{{item.id}}" data-title="{{item.title}}" bindtap="viewLedger">查看台账</button>
         </view>
+        <button
+          wx:if="{{item.enrolled}}"
+          class="trace-button"
+          data-id="{{item.id}}"
+          bindtap="openTrace"
+        >学习留痕（签到/成果上传）</button>
       </view>
     </block>
+  </view>
+
+  <view wx:if="{{traceVisible}}" class="trace-mask" bindtap="closeTrace">
+    <view class="trace-panel" catchtap="noop">
+      <view class="trace-header">
+        <view class="trace-title">学习留痕（签到/成果上传）</view>
+        <view class="trace-close" bindtap="closeTrace">×</view>
+      </view>
+      <view class="trace-body">
+        <view class="trace-training">{{traceItem.title}}</view>
+        <view class="trace-row">
+          <text>签到状态</text>
+          <view>{{traceRecord.completedAt ? "已签到：" + traceRecord.completedAt : "待签到"}}</view>
+        </view>
+        <view class="trace-row">
+          <text>成果状态</text>
+          <view>{{traceRecord.achievementUrl ? "已上传" : "未上传"}}</view>
+        </view>
+        <view class="input-label">学习时长（小时）</view>
+        <input class="trace-input" type="digit" value="{{studyHours}}" placeholder="如：2" bindinput="onStudyHoursInput" />
+        <view class="input-label">成果链接</view>
+        <input class="trace-input" value="{{achievementUrl}}" placeholder="可粘贴链接，也可选择文件上传" bindinput="onAchievementUrlInput" />
+        <button class="upload-button" loading="{{uploading}}" bindtap="chooseAchievement">
+          {{achievementFileName || "选择成果文件"}}
+        </button>
+        <view wx:if="{{traceRecord.achievementPreviewUrl}}" class="trace-link">当前成果：{{traceRecord.achievementUrl}}</view>
+        <view class="trace-actions">
+          <button class="outline" bindtap="closeTrace">取消</button>
+          <button class="primary-button" loading="{{tracing}}" bindtap="submitTrace">签到并提交</button>
+        </view>
+      </view>
+    </view>
   </view>
 </view>

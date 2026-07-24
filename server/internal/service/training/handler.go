@@ -2,8 +2,13 @@ package training
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"teacher-platform/server/internal/response"
 
@@ -11,7 +16,9 @@ import (
 )
 
 type achievementRequest struct {
-	AchievementURL string `json:"achievementUrl"`
+	AchievementURL string  `json:"achievementUrl"`
+	SignIn         bool    `json:"signIn"`
+	StudyHours     float64 `json:"studyHours"`
 }
 
 type auditRequest struct {
@@ -46,6 +53,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *sql.DB) {
 	rg.POST("/:id/enroll", enroll(db))
 	rg.DELETE("/:id/enroll", cancelEnroll(db))
 	rg.POST("/:id/audit", audit(db))
+	rg.POST("/learning-records/uploads", uploadAchievement())
 	rg.POST("/:id/learning-records", submitAchievement(db))
 	rg.GET("/ledgers", records(db))
 	rg.GET("/statistics", statistics(db))
@@ -446,25 +454,70 @@ func audit(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
+func uploadAchievement() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		file, err := c.FormFile("file")
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "file is required")
+			return
+		}
+		ext := strings.ToLower(filepath.Ext(file.Filename))
+		allowed := map[string]bool{
+			".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true,
+			".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+			".ppt": true, ".pptx": true, ".txt": true, ".zip": true, ".rar": true,
+		}
+		if !allowed[ext] {
+			response.Fail(c, http.StatusBadRequest, "unsupported achievement file type")
+			return
+		}
+		dir := filepath.Join("uploads", "trainings")
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			response.Fail(c, http.StatusInternalServerError, "upload directory create failed")
+			return
+		}
+		name := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		dst := filepath.Join(dir, name)
+		if err := c.SaveUploadedFile(file, dst); err != nil {
+			response.Fail(c, http.StatusInternalServerError, "achievement upload failed")
+			return
+		}
+		response.OK(c, gin.H{"url": "/uploads/trainings/" + name, "name": file.Filename})
+	}
+}
+
 func submitAchievement(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req achievementRequest
-		if err := c.ShouldBindJSON(&req); err != nil || req.AchievementURL == "" {
-			response.Fail(c, http.StatusBadRequest, "achievementUrl is required")
+		if err := c.ShouldBindJSON(&req); err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid learning record payload")
 			return
 		}
-		_, err := db.ExecContext(
+		req.AchievementURL = strings.TrimSpace(req.AchievementURL)
+		if !req.SignIn && req.AchievementURL == "" {
+			response.Fail(c, http.StatusBadRequest, "signIn or achievementUrl is required")
+			return
+		}
+		result, err := db.ExecContext(
 			c.Request.Context(),
 			`UPDATE training_record
-			 SET achievement_url = ?, achievement_status = 0
+			 SET sign_in_time = CASE WHEN ? THEN COALESCE(sign_in_time, NOW()) ELSE sign_in_time END,
+			     study_hours = CASE WHEN ? > 0 THEN ? ELSE study_hours END,
+			     achievement_url = CASE WHEN ? <> '' THEN ? ELSE achievement_url END,
+			     achievement_status = CASE WHEN ? <> '' THEN 0 ELSE achievement_status END
 			 WHERE training_id = ? AND teacher_id = ?`,
-			req.AchievementURL, pathID(c), c.GetInt64("userID"),
+			req.SignIn, req.StudyHours, req.StudyHours, req.AchievementURL, req.AchievementURL, req.AchievementURL, pathID(c), c.GetInt64("userID"),
 		)
 		if err != nil {
 			response.Fail(c, http.StatusInternalServerError, "training achievement submit failed")
 			return
 		}
-		response.OK(c, gin.H{"trainingId": pathID(c), "submitted": true})
+		affected, _ := result.RowsAffected()
+		if affected == 0 {
+			response.Fail(c, http.StatusNotFound, "training record not found")
+			return
+		}
+		response.OK(c, gin.H{"trainingId": pathID(c), "submitted": true, "signed": req.SignIn})
 	}
 }
 

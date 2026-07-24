@@ -9,6 +9,7 @@ import (
 	"teacher-platform/server/internal/response"
 	"teacher-platform/server/internal/service/auth"
 	"teacher-platform/server/internal/service/profile"
+	"teacher-platform/server/internal/service/survey"
 	"teacher-platform/server/internal/service/system"
 	"teacher-platform/server/internal/service/training"
 	"teacher-platform/server/internal/service/treehole"
@@ -38,6 +39,8 @@ func New(cfg config.Config, db *sql.DB) *gin.Engine {
 	profile.RegisterRoutes(protected.Group("/profile"), db)
 	treehole.RegisterRoutes(protected.Group("/treeholes"), db)
 	training.RegisterRoutes(protected.Group("/trainings"), db)
+	survey.RegisterRoutes(protected.Group("/survey"), db)
+	survey.RegisterRoutes(protected.Group("/admin/survey"), db)
 	system.RegisterRoutes(protected.Group("/system"), db)
 
 	r.NoRoute(func(c *gin.Context) {
